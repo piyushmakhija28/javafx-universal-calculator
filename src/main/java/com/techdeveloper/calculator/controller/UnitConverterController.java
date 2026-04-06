@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -104,6 +105,10 @@ public class UnitConverterController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Unit conversion result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = value + " " + fromUnit + " -> " + toUnit + " (" + category + ")";
+                HistoryService.getInstance().addEntry("Unit", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("UNIT_CONVERTER service not registered", e);
             displayResult("Error: Service not available");

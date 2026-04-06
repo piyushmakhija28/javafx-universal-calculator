@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -138,8 +139,15 @@ public class ProgrammerCalculatorController implements Initializable {
     @FXML
     private void onEquals(ActionEvent event) {
         if (pendingOperand.isEmpty() || pendingOperator.isEmpty()) return;
-        String result = evaluateBinary(pendingOperand, pendingOperator, currentInput);
+        String left  = pendingOperand;
+        String op    = pendingOperator;
+        String right = currentInput;
+        String result = evaluateBinary(left, op, right);
         applyResult(result);
+        if (!result.startsWith("Error:")) {
+            String inputSummary = left + " " + op + " " + right + " (" + currentBase + ")";
+            HistoryService.getInstance().addEntry("Programmer", inputSummary, result);
+        }
         pendingOperand = "";
         pendingOperator = "";
         resultJustShown = true;

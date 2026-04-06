@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -67,6 +68,10 @@ public class DateDiffCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("DateDiff result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = start + " to " + end;
+                HistoryService.getInstance().addEntry("Date Diff", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("DATE_DIFF service not registered", e);
             displayResult("Error: Service not available");

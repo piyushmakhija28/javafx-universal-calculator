@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -61,6 +62,10 @@ public class EMICalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("EMI calculation result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "P=" + principal + ", R=" + rate + ", N=" + tenure;
+                HistoryService.getInstance().addEntry("EMI", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("EMI service not registered", e);
             displayResult("Error: Service not available");

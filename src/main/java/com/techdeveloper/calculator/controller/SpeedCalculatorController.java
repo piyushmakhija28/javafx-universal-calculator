@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -66,6 +67,13 @@ public class SpeedCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Speed result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "Solve=" + solveToken
+                        + (!speed.isEmpty()    ? ", S=" + speed    : "")
+                        + (!distance.isEmpty() ? ", D=" + distance : "")
+                        + (!time.isEmpty()     ? ", T=" + time     : "");
+                HistoryService.getInstance().addEntry("Speed", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("SPEED service not registered", e);
             displayResult("Error: Service not available");

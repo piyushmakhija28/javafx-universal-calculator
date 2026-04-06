@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -75,6 +76,11 @@ public class BMICalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("BMI result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String unit = (rbMetric == null || rbMetric.isSelected()) ? "METRIC" : "IMPERIAL";
+                String inputSummary = "W=" + weight + ", H=" + height + ", " + unit;
+                HistoryService.getInstance().addEntry("BMI", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("BMI service not registered", e);
             displayResult("Error: Service not available");

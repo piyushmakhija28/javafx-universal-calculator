@@ -824,7 +824,7 @@ Output:
 
 ---
 
-## Phase F — Pro Feature Enhancements (OPTIONAL)
+## Phase F — Pro Feature Enhancements (OPTIONAL) ✅ COMPLETE
 
 > **Mode: PARALLEL** — All 3 subtasks can launch simultaneously after Phase E
 > These are optional upgrade phases — add them after v1.0 is complete and stable.
@@ -841,7 +841,7 @@ Phase F launches all 3 agents AT THE SAME TIME:
 
 ---
 
-### F.1 — Calculation History Feature
+### F.1 — Calculation History Feature ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -881,7 +881,7 @@ Per-file deliverable report mandatory for all modified files.
 
 ---
 
-### F.2 — Real-Time Currency API Integration
+### F.2 — Real-Time Currency API Integration ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -924,7 +924,7 @@ Per-file report mandatory. Do NOT break the existing offline fallback path.
 
 ---
 
-### F.3 — Function Plotter (Scientific Calculator)
+### F.3 — Function Plotter (Scientific Calculator) ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -976,6 +976,11 @@ Requirements:
 Canvas drawing: draw axes first, then scale y-values to canvas height, draw polyline.
 Per-file deliverable report mandatory. Async rendering required (Task<double[]>).
 ```
+
+> ✅ **PHASE F COMPLETE — v1.1.0**
+> F.1: HistoryEntry + HistoryService + history-panel.fxml + HistoryPanelController + all 15 controllers wired. SplitPane 80/20 with View menu toggle.
+> F.2: LiveCurrencyService (HttpClient, 60-min cache, offline fallback) + labelRateStatus badge. org.json added to pom.xml.
+> F.3: PlotterService (recursive-descent parser) + function-plotter.fxml + FunctionPlotterController (Canvas + Task async rendering). "Plot f(x)" button in Scientific Calculator.
 
 ---
 

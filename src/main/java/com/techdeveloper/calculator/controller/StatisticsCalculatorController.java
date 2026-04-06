@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -72,9 +73,20 @@ public class StatisticsCalculatorController implements Initializable {
             }
         };
 
+        final String inputSnapshot = rawInput;
         currentTask.setOnSucceeded(workerState -> {
             String result = currentTask.getValue();
-            Platform.runLater(() -> displayResult(result));
+            // Platform.runLater() — mandatory for UI mutations including HistoryService.addEntry().
+            Platform.runLater(() -> {
+                displayResult(result);
+                if (!result.startsWith("Error:")) {
+                    // Truncate long input arrays to keep history readable
+                    String truncated = inputSnapshot.length() > 40
+                            ? inputSnapshot.substring(0, 37) + "..."
+                            : inputSnapshot;
+                    HistoryService.getInstance().addEntry("Statistics", truncated, result);
+                }
+            });
         });
 
         currentTask.setOnFailed(workerState -> {

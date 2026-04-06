@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -88,13 +89,19 @@ public class BasicCalculatorController implements Initializable {
     @FXML
     private void onEquals(ActionEvent event) {
         if (pendingOperand.isEmpty() || pendingOperator.isEmpty()) return;
-        String result = evaluate(pendingOperand, pendingOperator, currentInput);
+        String left  = pendingOperand;
+        String op    = pendingOperator;
+        String right = currentInput;
+        String result = evaluate(left, op, right);
         if (result.startsWith("Error:")) {
             showInlineError(result);
         } else {
             display.setStyle(NORMAL_STYLE);
             display.setText(result);
             currentInput = result;
+            // Record history entry on equals press only — not on intermediate digit presses.
+            String inputSummary = left + " " + op + " " + right;
+            HistoryService.getInstance().addEntry("Basic", inputSummary, result);
         }
         pendingOperand = "";
         pendingOperator = "";

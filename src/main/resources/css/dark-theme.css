@@ -276,3 +276,114 @@
     -fx-background-radius: 12;
     -fx-padding: 24;
 }
+
+/* ── Currency rate status label (live / offline indicator) ───────────── */
+.rate-status-label {
+    -fx-font-size: 11px;
+    -fx-font-style: italic;
+    -fx-text-fill: #888888;
+}
+
+/* ── History Panel ───────────────────────────────────────────────────── */
+.history-panel {
+    -fx-background-color: #252525;
+    -fx-border-color: #404040;
+    -fx-border-width: 0 0 0 1;
+    -fx-min-width: 180px;
+}
+
+.history-panel-title {
+    -fx-text-fill: #9e9e9e;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 4 0;
+}
+
+/* ── History ListView ─────────────────────────────────────────────────── */
+.history-list {
+    -fx-background-color: transparent;
+    -fx-border-color: #404040;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.history-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4 6 4 6;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: #383838;
+}
+
+.history-list .list-cell:selected {
+    -fx-background-color: #3a4a5a;
+}
+
+.history-list .list-cell:hover {
+    -fx-background-color: #2d3d4d;
+}
+
+/* ── History Cell label ───────────────────────────────────────────────── */
+.history-cell-label {
+    -fx-text-fill: #c8c8c8;
+    -fx-font-size: 11px;
+    -fx-font-family: "Consolas", "Roboto Mono", monospace;
+}
+
+/* ── Copy Button ─────────────────────────────────────────────────────── */
+.copy-btn {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #9e9e9e;
+    -fx-font-size: 10px;
+    -fx-padding: 2 6 2 6;
+    -fx-background-radius: 3;
+    -fx-border-color: #505050;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-cursor: hand;
+    -fx-min-width: 38px;
+}
+
+.copy-btn:hover {
+    -fx-background-color: #4a90d9;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #4a90d9;
+}
+
+.copy-btn:pressed {
+    -fx-background-color: #3a7fc8;
+}
+
+/* ── History Clear Button ─────────────────────────────────────────────── */
+.history-clear-btn {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #9e9e9e;
+    -fx-font-size: 12px;
+    -fx-padding: 6 10 6 10;
+    -fx-background-radius: 4;
+    -fx-border-color: #404040;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-cursor: hand;
+}
+
+.history-clear-btn:hover {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #e74c3c;
+}
+
+.history-clear-btn:pressed {
+    -fx-background-color: #c0392b;
+}
+
+/* ── SplitPane styling ───────────────────────────────────────────────── */
+.split-pane {
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 0;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-background-color: #404040;
+    -fx-padding: 0 2 0 2;
+}

@@ -50,6 +50,9 @@
     <Button fx:id="btnConvert" text="Convert" styleClass="calc-button button-accent"
             onAction="#onConvert" style="-fx-min-width: 160px;"/>
 
+    <Label fx:id="labelRateStatus" styleClass="rate-status-label"
+           style="-fx-font-size: 11px; -fx-font-style: italic; -fx-text-fill: #888888;"/>
+
     <Separator style="-fx-background-color: #404040;"/>
 
     <Label text="Result" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;"/>

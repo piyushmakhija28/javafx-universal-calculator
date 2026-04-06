@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.geometry.Insets?>
+
+<!--
+  history-panel.fxml — Calculation History side panel.
+
+  Layout:
+    VBox
+      Label  "Calculation History"
+      ListView  (bound to HistoryService.getEntries() in controller)
+      Button  "Clear History"
+
+  The ListView uses a custom cell factory (set in HistoryPanelController.initialize())
+  that shows entry.toString() plus a compact "Copy" button on each row.
+
+  The panel is embedded into main.fxml via <fx:include> inside the SplitPane right side.
+-->
+<VBox fx:id="historyPanel"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.techdeveloper.calculator.controller.HistoryPanelController"
+      styleClass="history-panel"
+      spacing="8">
+
+    <padding>
+        <Insets top="12" right="8" bottom="12" left="8"/>
+    </padding>
+
+    <!-- Header label -->
+    <Label text="Calculation History"
+           styleClass="history-panel-title"/>
+
+    <!-- Entries list — fills remaining vertical space -->
+    <ListView fx:id="historyList"
+              styleClass="history-list"
+              VBox.vgrow="ALWAYS"/>
+
+    <!-- Clear button at the bottom -->
+    <Button fx:id="btnClear"
+            text="Clear History"
+            onAction="#onClear"
+            styleClass="history-clear-btn"
+            maxWidth="Infinity"/>
+
+</VBox>

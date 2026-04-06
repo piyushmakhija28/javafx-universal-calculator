@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -68,6 +69,10 @@ public class AgeCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Age result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "DOB=" + dob + ", To=" + target;
+                HistoryService.getInstance().addEntry("Age", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("AGE service not registered", e);
             displayResult("Error: Service not available");

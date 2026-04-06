@@ -2,18 +2,24 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -44,6 +50,7 @@ public class ScientificCalculatorController implements Initializable {
     @FXML private TextField display;
     @FXML private ToggleButton btnDeg;
     @FXML private ToggleButton btnRad;
+    @FXML private Button btnPlotter;
 
     private String currentInput = "0";
     private String pendingOperand = "";
@@ -105,8 +112,15 @@ public class ScientificCalculatorController implements Initializable {
     @FXML
     private void onEquals(ActionEvent event) {
         if (pendingOperand.isEmpty() || pendingOperator.isEmpty()) return;
-        String result = evaluateBinary(pendingOperand, pendingOperator, currentInput);
+        String left  = pendingOperand;
+        String op    = pendingOperator;
+        String right = currentInput;
+        String result = evaluateBinary(left, op, right);
         applyResult(result);
+        if (!result.startsWith("Error:")) {
+            String inputSummary = left + " " + op + " " + right;
+            HistoryService.getInstance().addEntry("Scientific", inputSummary, result);
+        }
         pendingOperand = "";
         pendingOperator = "";
         resultJustShown = true;
@@ -127,12 +141,17 @@ public class ScientificCalculatorController implements Initializable {
     private void onScientific(ActionEvent event) {
         String btnText = ((Button) event.getSource()).getText().trim();
         String func = BUTTON_TO_OP.getOrDefault(btnText, btnText.toLowerCase());
+        String valueSnapshot = currentInput;
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",     currentInput);
+        inputs.put("value",     valueSnapshot);
         inputs.put("operation", func);
         inputs.put("mode",      isRadians ? "RAD" : "DEG");
         String result = callService(inputs);
         applyResult(result);
+        if (!result.startsWith("Error:")) {
+            String inputSummary = func + "(" + valueSnapshot + ")";
+            HistoryService.getInstance().addEntry("Scientific", inputSummary, result);
+        }
         resultJustShown = true;
     }
 
@@ -149,6 +168,40 @@ public class ScientificCalculatorController implements Initializable {
             display.setText(result);
         } else {
             showInlineError(result);
+        }
+    }
+
+    // ── Function Plotter ───────────────────────────────────────────────────
+
+    @FXML
+    private void onOpenPlotter(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/fxml/function-plotter.fxml"));
+            Parent root = loader.load();
+            Scene plotterScene = new Scene(root);
+            // Apply the same dark theme stylesheet — the plotter opens in its own Stage
+            // which does not inherit the parent Scene's stylesheets.
+            URL cssUrl = getClass().getResource("/css/dark-theme.css");
+            if (cssUrl != null) {
+                plotterScene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            Stage plotterStage = new Stage();
+            plotterStage.setTitle("Function Plotter");
+            plotterStage.setScene(plotterScene);
+            plotterStage.setResizable(false);
+            plotterStage.show();
+            log.info("Function Plotter window opened");
+        } catch (IOException e) {
+            log.error("Failed to open Function Plotter window", e);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Function Plotter");
+            alert.setHeaderText("Could not open the Function Plotter");
+            alert.setContentText(
+                "The plotter window could not be loaded.\n"
+                + "Reason: " + e.getMessage() + "\n"
+                + "Check that function-plotter.fxml exists in /fxml/.");
+            alert.showAndWait();
         }
     }
 

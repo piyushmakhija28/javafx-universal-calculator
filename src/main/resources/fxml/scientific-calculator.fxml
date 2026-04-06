@@ -101,4 +101,12 @@
         <Button fx:id="btnEquals" text="=" styleClass="calc-button button-accent" maxWidth="Infinity" maxHeight="Infinity" onAction="#onEquals" GridPane.columnIndex="5" GridPane.rowIndex="4"/>
 
     </GridPane>
+
+    <!-- Function Plotter launcher -->
+    <Button fx:id="btnPlotter"
+            text="Plot f(x)"
+            styleClass="calc-button"
+            maxWidth="Infinity"
+            onAction="#onOpenPlotter"/>
+
 </VBox>

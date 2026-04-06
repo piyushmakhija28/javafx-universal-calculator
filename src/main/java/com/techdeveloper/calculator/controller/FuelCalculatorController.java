@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -67,6 +68,11 @@ public class FuelCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Fuel result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "Dist=" + distance + ", Fuel=" + fuelUsed
+                        + (fuelPrice.isEmpty() ? "" : ", Price=" + fuelPrice);
+                HistoryService.getInstance().addEntry("Fuel", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("FUEL service not registered", e);
             displayResult("Error: Service not available");

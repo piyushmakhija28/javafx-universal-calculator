@@ -1,90 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.SplitPane?>
 
+<!--
+  main.fxml — Root layout for the Universal JavaFX Calculator.
+
+  Structure:
+    BorderPane (root)
+      top:  VBox
+              MenuBar  (Basic | Science | Finance | Health | Utilities | View)
+      center: SplitPane (horizontal)
+                left  (80%): BorderPane  — calculator area; center swapped by ViewRouter
+                right (20%): fx:include  — history-panel.fxml
+
+  The View > "History Panel" CheckMenuItem toggles the history pane visibility
+  by adjusting the SplitPane divider positions via MainAppController.onToggleHistory().
+-->
 <BorderPane fx:id="mainLayout"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.techdeveloper.calculator.controller.MainAppController"
             stylesheets="@../css/dark-theme.css">
 
     <top>
-        <MenuBar styleClass="menu-bar">
+        <VBox>
+            <MenuBar fx:id="menuBar" styleClass="menu-bar">
 
-            <!-- Basic Menu -->
-            <Menu text="Basic">
-                <MenuItem fx:id="menuBasic"
-                          text="Basic Calculator"
-                          onAction="#loadBasic"/>
-            </Menu>
+                <!-- Basic Menu -->
+                <Menu text="Basic">
+                    <MenuItem fx:id="menuBasic"
+                              text="Basic Calculator"
+                              onAction="#loadBasic"/>
+                </Menu>
 
-            <!-- Science Menu -->
-            <Menu text="Science">
-                <MenuItem fx:id="menuScientific"
-                          text="Scientific Calculator"
-                          onAction="#loadScientific"/>
-                <MenuItem fx:id="menuProgrammer"
-                          text="Programmer Calculator"
-                          onAction="#loadProgrammer"/>
-                <SeparatorMenuItem/>
-                <MenuItem fx:id="menuMatrix"
-                          text="Matrix Calculator"
-                          onAction="#loadMatrix"/>
-                <MenuItem fx:id="menuStatistics"
-                          text="Statistics Calculator"
-                          onAction="#loadStatistics"/>
-            </Menu>
+                <!-- Science Menu -->
+                <Menu text="Science">
+                    <MenuItem fx:id="menuScientific"
+                              text="Scientific Calculator"
+                              onAction="#loadScientific"/>
+                    <MenuItem fx:id="menuProgrammer"
+                              text="Programmer Calculator"
+                              onAction="#loadProgrammer"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="menuMatrix"
+                              text="Matrix Calculator"
+                              onAction="#loadMatrix"/>
+                    <MenuItem fx:id="menuStatistics"
+                              text="Statistics Calculator"
+                              onAction="#loadStatistics"/>
+                </Menu>
 
-            <!-- Finance Menu -->
-            <Menu text="Finance">
-                <MenuItem fx:id="menuEMI"
-                          text="EMI / Loan Calculator"
-                          onAction="#loadEMI"/>
-                <MenuItem fx:id="menuCurrency"
-                          text="Currency Converter"
-                          onAction="#loadCurrency"/>
-                <SeparatorMenuItem/>
-                <MenuItem fx:id="menuTip"
-                          text="Tip Calculator"
-                          onAction="#loadTip"/>
-                <MenuItem fx:id="menuDiscount"
-                          text="Discount Calculator"
-                          onAction="#loadDiscount"/>
-            </Menu>
+                <!-- Finance Menu -->
+                <Menu text="Finance">
+                    <MenuItem fx:id="menuEMI"
+                              text="EMI / Loan Calculator"
+                              onAction="#loadEMI"/>
+                    <MenuItem fx:id="menuCurrency"
+                              text="Currency Converter"
+                              onAction="#loadCurrency"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="menuTip"
+                              text="Tip Calculator"
+                              onAction="#loadTip"/>
+                    <MenuItem fx:id="menuDiscount"
+                              text="Discount Calculator"
+                              onAction="#loadDiscount"/>
+                </Menu>
 
-            <!-- Health Menu -->
-            <Menu text="Health">
-                <MenuItem fx:id="menuBMI"
-                          text="BMI Calculator"
-                          onAction="#loadBMI"/>
-                <MenuItem fx:id="menuAge"
-                          text="Age Calculator"
-                          onAction="#loadAge"/>
-            </Menu>
+                <!-- Health Menu -->
+                <Menu text="Health">
+                    <MenuItem fx:id="menuBMI"
+                              text="BMI Calculator"
+                              onAction="#loadBMI"/>
+                    <MenuItem fx:id="menuAge"
+                              text="Age Calculator"
+                              onAction="#loadAge"/>
+                </Menu>
 
-            <!-- Utilities Menu -->
-            <Menu text="Utilities">
-                <MenuItem fx:id="menuDateDiff"
-                          text="Date Difference"
-                          onAction="#loadDateDiff"/>
-                <MenuItem fx:id="menuUnit"
-                          text="Unit Converter"
-                          onAction="#loadUnit"/>
-                <SeparatorMenuItem/>
-                <MenuItem fx:id="menuSpeed"
-                          text="Speed / Distance / Time"
-                          onAction="#loadSpeed"/>
-                <MenuItem fx:id="menuFuel"
-                          text="Fuel Efficiency"
-                          onAction="#loadFuel"/>
-            </Menu>
+                <!-- Utilities Menu -->
+                <Menu text="Utilities">
+                    <MenuItem fx:id="menuDateDiff"
+                              text="Date Difference"
+                              onAction="#loadDateDiff"/>
+                    <MenuItem fx:id="menuUnit"
+                              text="Unit Converter"
+                              onAction="#loadUnit"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="menuSpeed"
+                              text="Speed / Distance / Time"
+                              onAction="#loadSpeed"/>
+                    <MenuItem fx:id="menuFuel"
+                              text="Fuel Efficiency"
+                              onAction="#loadFuel"/>
+                </Menu>
 
-        </MenuBar>
+                <!-- View Menu — toggles the history panel -->
+                <Menu text="View">
+                    <CheckMenuItem fx:id="menuHistoryToggle"
+                                   text="History Panel"
+                                   selected="true"
+                                   onAction="#onToggleHistory"/>
+                </Menu>
+
+            </MenuBar>
+        </VBox>
     </top>
 
-    <!-- center: loaded dynamically by ViewRouter via MainAppController -->
+    <!--
+      center: SplitPane divides the window horizontally.
+        - Left  (divider at 0.80 = 80% width): the calculator BorderPane.
+          ViewRouter swaps calculator views into this pane's center.
+        - Right (remaining 20%): the history side panel, loaded via fx:include.
+    -->
+    <center>
+        <SplitPane fx:id="splitPane"
+                   dividerPositions="0.80"
+                   styleClass="split-pane">
+
+            <!-- Left: calculator area -->
+            <BorderPane fx:id="calculatorPane"
+                        styleClass="border-pane"
+                        SplitPane.resizableWithParent="true"/>
+
+            <!-- Right: history panel — controller is HistoryPanelController -->
+            <fx:include fx:id="historyInclude"
+                        source="history-panel.fxml"/>
+
+        </SplitPane>
+    </center>
 
 </BorderPane>

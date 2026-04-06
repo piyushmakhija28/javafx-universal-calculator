@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -59,6 +60,10 @@ public class DiscountCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Discount result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "Price=" + price + ", Discount=" + discount + "%";
+                HistoryService.getInstance().addEntry("Discount", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("DISCOUNT service not registered", e);
             displayResult("Error: Service not available");

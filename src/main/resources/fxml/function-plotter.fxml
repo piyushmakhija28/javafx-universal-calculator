@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="10"
+      style="-fx-padding: 16; -fx-background-color: #1e1e1e;"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.techdeveloper.calculator.controller.FunctionPlotterController">
+
+    <!-- Row 1: Expression input -->
+    <HBox spacing="8" style="-fx-alignment: CENTER_LEFT;">
+        <Label text="f(x) = "
+               style="-fx-text-fill: #e0e0e0; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+        <TextField fx:id="fieldExpression"
+                   promptText="e.g. sin(x)"
+                   HBox.hgrow="ALWAYS"
+                   style="-fx-background-color: #252525; -fx-text-fill: #e0e0e0;
+                          -fx-font-size: 14px; -fx-border-color: #404040; -fx-border-width: 1;
+                          -fx-border-radius: 4; -fx-background-radius: 4;
+                          -fx-padding: 6 10 6 10; -fx-min-width: 300px;"/>
+    </HBox>
+
+    <!-- Row 2: Range sliders -->
+    <HBox spacing="16" style="-fx-alignment: CENTER_LEFT;">
+
+        <!-- X min -->
+        <HBox spacing="6" style="-fx-alignment: CENTER_LEFT;">
+            <Label text="X min:"
+                   style="-fx-text-fill: #9e9e9e; -fx-font-size: 13px;"/>
+            <Slider fx:id="sliderXMin"
+                    min="-20" max="0" value="-10"
+                    showTickMarks="true" showTickLabels="true"
+                    majorTickUnit="10" minorTickCount="4"
+                    prefWidth="160"
+                    style="-fx-padding: 4 0 4 0;"/>
+        </HBox>
+
+        <!-- X max -->
+        <HBox spacing="6" style="-fx-alignment: CENTER_LEFT;">
+            <Label text="X max:"
+                   style="-fx-text-fill: #9e9e9e; -fx-font-size: 13px;"/>
+            <Slider fx:id="sliderXMax"
+                    min="0" max="20" value="10"
+                    showTickMarks="true" showTickLabels="true"
+                    majorTickUnit="10" minorTickCount="4"
+                    prefWidth="160"
+                    style="-fx-padding: 4 0 4 0;"/>
+        </HBox>
+
+        <!-- Current range display -->
+        <Label fx:id="labelRange"
+               text="[-10, 10]"
+               style="-fx-text-fill: #4a90d9; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+    </HBox>
+
+    <!-- Row 3: Plot canvas -->
+    <Canvas fx:id="plotCanvas" width="600" height="400"/>
+
+    <!-- Row 4: Action buttons -->
+    <HBox spacing="10" style="-fx-alignment: CENTER_LEFT;">
+        <Button fx:id="btnPlot"
+                text="Plot"
+                onAction="#onPlot"
+                styleClass="calc-button"
+                style="-fx-background-color: #4a90d9; -fx-text-fill: #ffffff;
+                       -fx-font-weight: bold; -fx-min-width: 80px;"/>
+        <Button fx:id="btnClear"
+                text="Clear"
+                onAction="#onClear"
+                styleClass="calc-button"
+                style="-fx-min-width: 80px;"/>
+    </HBox>
+
+    <!-- Row 5: Status / error label -->
+    <Label fx:id="labelStatus"
+           text=""
+           wrapText="true"
+           style="-fx-text-fill: #9e9e9e; -fx-font-size: 12px;"/>
+
+</VBox>

@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -105,10 +106,18 @@ public class MatrixCalculatorController implements Initializable {
             }
         };
 
+        final String historyOperation = operation;
         currentTask.setOnSucceeded(workerState -> {
             String result = currentTask.getValue();
-            // Platform.runLater() — mandatory for any UI mutation from a non-FX thread
-            Platform.runLater(() -> displayResult(result));
+            // Platform.runLater() — mandatory for any UI mutation from a non-FX thread.
+            // HistoryService.addEntry() mutates an ObservableList and must also run on the FX thread.
+            Platform.runLater(() -> {
+                displayResult(result);
+                if (!result.startsWith("Error:")) {
+                    String inputSummary = historyOperation + ", " + matrixSize + "x" + matrixSize;
+                    HistoryService.getInstance().addEntry("Matrix", inputSummary, result);
+                }
+            });
         });
 
         currentTask.setOnFailed(workerState -> {

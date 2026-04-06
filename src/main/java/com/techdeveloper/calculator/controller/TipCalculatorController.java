@@ -2,6 +2,7 @@ package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.service.CalculatorService;
 import com.techdeveloper.calculator.service.CalculatorType;
+import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -76,6 +77,10 @@ public class TipCalculatorController implements Initializable {
             String result = svc.calculate(inputs);
             log.debug("Tip result: {}", result);
             displayResult(result);
+            if (!result.startsWith("Error:")) {
+                String inputSummary = "Bill=" + bill + ", Tip=" + tipPercent + "%, Split=" + splitCount;
+                HistoryService.getInstance().addEntry("Tip", inputSummary, result);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("TIP service not registered", e);
             displayResult("Error: Service not available");
