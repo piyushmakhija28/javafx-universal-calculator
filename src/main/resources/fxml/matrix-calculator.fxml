@@ -42,12 +42,12 @@
                 <columnConstraints>
                     <ColumnConstraints minWidth="60" prefWidth="70"/>
                     <ColumnConstraints minWidth="60" prefWidth="70"/>
-                    <ColumnConstraints fx:id="colA3" minWidth="60" prefWidth="70" visible="false" managed="false"/>
+                    <ColumnConstraints minWidth="60" prefWidth="70"/>
                 </columnConstraints>
                 <rowConstraints>
                     <RowConstraints minHeight="32"/>
                     <RowConstraints minHeight="32"/>
-                    <RowConstraints fx:id="rowA3" minHeight="32" managed="false"/>
+                    <RowConstraints minHeight="32"/>
                 </rowConstraints>
                 <TextField fx:id="a00" text="0" styleClass="display-field" maxWidth="Infinity" maxHeight="Infinity"
                            style="-fx-font-size: 13px; -fx-background-color: #252525; -fx-text-fill: #e0e0e0; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 3; -fx-background-radius: 3; -fx-padding: 4 6 4 6;"
@@ -86,12 +86,12 @@
                 <columnConstraints>
                     <ColumnConstraints minWidth="60" prefWidth="70"/>
                     <ColumnConstraints minWidth="60" prefWidth="70"/>
-                    <ColumnConstraints fx:id="colB3" minWidth="60" prefWidth="70" visible="false" managed="false"/>
+                    <ColumnConstraints minWidth="60" prefWidth="70"/>
                 </columnConstraints>
                 <rowConstraints>
                     <RowConstraints minHeight="32"/>
                     <RowConstraints minHeight="32"/>
-                    <RowConstraints fx:id="rowB3" minHeight="32" managed="false"/>
+                    <RowConstraints minHeight="32"/>
                 </rowConstraints>
                 <TextField fx:id="b00" text="0" styleClass="display-field" maxWidth="Infinity" maxHeight="Infinity"
                            style="-fx-font-size: 13px; -fx-background-color: #252525; -fx-text-fill: #e0e0e0; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 3; -fx-background-radius: 3; -fx-padding: 4 6 4 6;"
