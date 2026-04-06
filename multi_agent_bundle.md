@@ -1,5 +1,5 @@
 # Universal JavaFX Calculator — Multi-Agent Orchestration Bundle
-# Version: 2.0.0 | Generated: 2026-04-06 | Owner: piyushmakhija028
+# Version: 2.0.0 | Generated: 2026-04-06 | Owner: piyushmakhija28
 
 ---
 
@@ -7,7 +7,7 @@
 
 ### YOUR TASK
 Build a **Universal Multi-Calculator Desktop Application** using **JavaFX** and push it publicly to
-GitHub under the account `piyushmakhija028/Calculator`. The application must have a **Menu Bar** that
+GitHub under the account `piyushmakhija28/Calculator`. The application must have a **Menu Bar** that
 lets users select from 15+ calculator types. The selected calculator must load dynamically into the
 main window center using FXML view swapping. All code must strictly follow **MVC architecture** using
 FXML (View), Controller (Behavior), and Service (Logic) layers.
@@ -44,7 +44,7 @@ FXML (View), Controller (Behavior), and Service (Logic) layers.
 
 ### CONSTRAINTS
 - Architecture: JavaFX MVC (FXML View + Controller + Service Layer)
-- GitHub: Push to public `piyushmakhija028/Calculator` repo
+- GitHub: Push to public `piyushmakhija28/Calculator` repo
 - Menu Bar: Dynamic FXML loading via `FXMLLoader` into `BorderPane` center
 - Java: 11+ | JavaFX: 13+
 - CSS: Dark theme mandatory (`-fx-background-color: #1e1e1e`)
@@ -362,9 +362,9 @@ Parallel With: javafx-engineer, spring-boot-microservices
 Depends On: NONE
 ═══════════════════════════════════════════════════════
 PROMPT:
-**CONSTRAINT (critical — read first):** Must NOT modify Java source files or FXML files. Must use GitHub username `piyushmakhija028` exactly. Per-file deliverable report mandatory.
+**CONSTRAINT (critical — read first):** Must NOT modify Java source files or FXML files. Must use GitHub username `piyushmakhija28` exactly. Per-file deliverable report mandatory.
 
-**Objective:** Create the public GitHub repository `piyushmakhija028/Calculator`, push the existing codebase, update `pom.xml` for JavaFX 21 compatibility, and write a comprehensive `README.md`.
+**Objective:** Create the public GitHub repository `piyushmakhija28/Calculator`, push the existing codebase, update `pom.xml` for JavaFX 21 compatibility, and write a comprehensive `README.md`.
 
 **Input:** Existing local Maven project at `c:\Users\techd\Documents\workspace-spring-tool-suite-4-4.27.0-new\Calculator`.
 
@@ -373,7 +373,7 @@ PROMPT:
    - Update java version to 21, JavaFX version to 21
    - Add `javafx-controls`, `javafx-fxml` dependencies (version 21)
    - Ensure `javafx-maven-plugin 0.0.8` is configured with `mainClass = com.techdeveloper.calculator.App`
-2. Create GitHub public repo `piyushmakhija028/Calculator` via `gh repo create` or API.
+2. Create GitHub public repo `piyushmakhija28/Calculator` via `gh repo create` or API.
 3. Initialize git (if not already), set branch to `main`, add remote origin.
 4. Commit all files and push to GitHub.
 5. Write `README.md` with the following sections:

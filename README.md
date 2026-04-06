@@ -4,11 +4,11 @@
 [![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)](https://openjfx.io/)
 [![Maven](https://img.shields.io/badge/Maven-3.8+-red?logo=apache-maven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![GitHub](https://img.shields.io/badge/GitHub-piyushmakhija028-black?logo=github)](https://github.com/piyushmakhija028/javafx-universal-calculator)
+[![GitHub](https://img.shields.io/badge/GitHub-piyushmakhija28-black?logo=github)](https://github.com/piyushmakhija28/javafx-universal-calculator)
 
 > **One app. 15 calculators. Zero internet required.**
 > A professional-grade desktop application built with JavaFX, MVC architecture, and a dark-themed UI
-> — by [piyushmakhija028](https://github.com/piyushmakhija028/javafx-universal-calculator)
+> — by [piyushmakhija28](https://github.com/piyushmakhija28/javafx-universal-calculator)
 
 ---
 
@@ -115,7 +115,7 @@ src/
 
 ```bash
 # Clone the repo
-git clone https://github.com/piyushmakhija028/javafx-universal-calculator.git
+git clone https://github.com/piyushmakhija28/javafx-universal-calculator.git
 cd javafx-universal-calculator
 
 # Run the application
@@ -410,7 +410,7 @@ All 17 files must appear in deliverable report — zero silent skips allowed.
 
 **What to do:**
 - Update `pom.xml` → Java 21, JavaFX 21, javafx-maven-plugin 0.0.8
-- Create public GitHub repo `piyushmakhija028/Calculator`
+- Create public GitHub repo `piyushmakhija28/Calculator`
 - Initialize git, set branch `main`, push all files
 - Write comprehensive `README.md` (users need project info before code is done)
 
@@ -419,7 +419,7 @@ All 17 files must appear in deliverable report — zero silent skips allowed.
 AGENT: infra-squad-lead
 
 CONSTRAINT (read first): Must NOT modify Java source files or FXML files.
-GitHub username is exactly: piyushmakhija028 (no variations).
+GitHub username is exactly: piyushmakhija28 (no variations).
 Per-file deliverable report mandatory.
 
 Objective: Setup GitHub repo and write README.md for the Universal JavaFX Calculator.
@@ -435,7 +435,7 @@ Task 1 — Update pom.xml:
   - mainClass → com.techdeveloper.calculator.App
 
 Task 2 — GitHub Repo:
-  gh repo create piyushmakhija028/javafx-universal-calculator --public --source=. --remote=origin
+  gh repo create piyushmakhija28/javafx-universal-calculator --public --source=. --remote=origin
   git init (if needed) ; git add . ; git commit -m "feat: initial Universal Calculator project"
   git branch -M main ; git push -u origin main
 
@@ -452,7 +452,7 @@ Task 3 — Write README.md with sections:
 
 Output:
 FILE REPORT: Path | Lines Added | Summary
-GitHub Repo URL: https://github.com/piyushmakhija028/javafx-universal-calculator
+GitHub Repo URL: https://github.com/piyushmakhija28/javafx-universal-calculator
 
 CONSTRAINT (read last): Do NOT touch any .java or .fxml files.
 README must include all 15 calculator types with button details.
@@ -625,13 +625,13 @@ Run these commands and report output:
 2. Verify file count: expect ~54 files (34 UI + 17 service + 3 infra)
    - If actual < 80% of 54 (i.e., < 44 files) → BLOCK completion, report missing files
 3. git log --oneline -5 (confirm commits exist)
-4. Confirm GitHub repo is accessible: https://github.com/piyushmakhija028/javafx-universal-calculator
+4. Confirm GitHub repo is accessible: https://github.com/piyushmakhija28/javafx-universal-calculator
 
 Output:
   GROUND-TRUTH REPORT
   Files Changed: <actual count> / 54 expected
   Status: COMPLETE (≥80%) | BLOCKED (<80% — list missing files)
-  GitHub URL: https://github.com/piyushmakhija028/javafx-universal-calculator
+  GitHub URL: https://github.com/piyushmakhija28/javafx-universal-calculator
   Last Commit: <hash and message>
 ```
 
@@ -712,5 +712,5 @@ MIT License — see [LICENSE](LICENSE) file for details.
 
 ---
 
-> Built with ❤️ using JavaFX 21 | Multi-agent orchestration by [piyushmakhija028](https://github.com/piyushmakhija028)
-> 🔗 Repo: [github.com/piyushmakhija028/javafx-universal-calculator](https://github.com/piyushmakhija028/javafx-universal-calculator)
+> Built with ❤️ using JavaFX 21 | Multi-agent orchestration by [piyushmakhija28](https://github.com/piyushmakhija28)
+> 🔗 Repo: [github.com/piyushmakhija28/javafx-universal-calculator](https://github.com/piyushmakhija28/javafx-universal-calculator)
