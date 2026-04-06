@@ -12,6 +12,10 @@ import java.util.Map;
  */
 public class UnitConverterService implements CalculatorService {
 
+    public UnitConverterService() {
+        // required for FXML
+    }
+
     // LENGTH base unit: meters
     private static final Map<String, Double> LENGTH_TO_METERS = new HashMap<>();
     // WEIGHT base unit: kilograms

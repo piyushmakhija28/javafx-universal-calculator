@@ -31,6 +31,10 @@ import java.util.ResourceBundle;
  */
 public class ScientificCalculatorController implements Initializable {
 
+    public ScientificCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(ScientificCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
@@ -229,10 +233,10 @@ public class ScientificCalculatorController implements Initializable {
      */
     private String evaluateBinary(String left, String operator, String right) {
         String opToken = switch (operator) {
-            case "+", "+" -> "+";
-            case "−", "-" -> "-";
-            case "×", "*" -> "*";
-            case "÷", "/" -> "/";
+            case "+"       -> "+";
+            case "−", "-"  -> "-";
+            case "×", "*"  -> "*";
+            case "÷", "/"  -> "/";
             default       -> operator;
         };
         Map<String, String> inputs = new LinkedHashMap<>();

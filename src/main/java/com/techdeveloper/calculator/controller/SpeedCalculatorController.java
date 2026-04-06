@@ -29,6 +29,10 @@ import java.util.ResourceBundle;
  */
 public class SpeedCalculatorController implements Initializable {
 
+    public SpeedCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(SpeedCalculatorController.class);
 
     @FXML private ComboBox<String> comboSolveFor;

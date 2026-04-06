@@ -10,6 +10,10 @@ import java.util.Map;
  */
 public class StatisticsCalculatorService implements CalculatorService {
 
+    public StatisticsCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

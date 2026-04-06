@@ -1,7 +1,9 @@
 module com.techdeveloper.calculator {
-    requires javafx.controls;
-    requires javafx.fxml;
-    requires javafx.graphics;
+    requires transitive javafx.base;
+    requires transitive javafx.controls;
+    requires transitive javafx.fxml;
+    requires transitive javafx.graphics;
+    requires java.net.http;
     requires org.slf4j;
 
     opens com.techdeveloper.calculator to javafx.fxml;

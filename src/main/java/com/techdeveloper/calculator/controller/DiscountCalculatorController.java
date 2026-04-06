@@ -26,6 +26,10 @@ import java.util.ResourceBundle;
  */
 public class DiscountCalculatorController implements Initializable {
 
+    public DiscountCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DiscountCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";

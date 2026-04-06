@@ -9,6 +9,10 @@ import java.util.Map;
  */
 public class BasicCalculatorService implements CalculatorService {
 
+    public BasicCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

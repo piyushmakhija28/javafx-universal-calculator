@@ -1,7 +1,6 @@
 package com.techdeveloper.calculator.service;
 
 import javafx.concurrent.Task;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +15,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Plain Java Singleton that fetches live exchange rates from the open.er-api.com
@@ -207,26 +208,43 @@ public final class LiveCurrencyService {
      * @param body raw JSON response body
      * @return map of currency code → rate vs USD, or {@code null} on parse failure
      */
+    private static final Pattern RESULT_PATTERN =
+            Pattern.compile("\"result\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern RATES_ENTRY_PATTERN =
+            Pattern.compile("\"([A-Z]{3,4})\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)");
+
     private Map<String, Double> parseRates(String body) {
         try {
-            JSONObject root = new JSONObject(body);
-
-            // Verify the API reported success
-            if (root.has("result") && !"success".equals(root.getString("result"))) {
+            // Verify the API reported success (if "result" key is present)
+            Matcher resultMatcher = RESULT_PATTERN.matcher(body);
+            if (resultMatcher.find() && !"success".equals(resultMatcher.group(1))) {
                 log.warn("LiveCurrencyService: API result is '{}', not 'success'",
-                        root.getString("result"));
+                        resultMatcher.group(1));
                 return null;
             }
 
-            JSONObject ratesJson = root.getJSONObject("rates");
-            Map<String, Double> rates = new HashMap<>();
+            // Locate the "rates" object block
+            int ratesKeyIdx = body.indexOf("\"rates\"");
+            if (ratesKeyIdx == -1) {
+                log.warn("LiveCurrencyService: 'rates' key not found in response");
+                return null;
+            }
+            int braceOpen = body.indexOf('{', ratesKeyIdx);
+            int braceClose = body.indexOf('}', braceOpen);
+            if (braceOpen == -1 || braceClose == -1) {
+                log.warn("LiveCurrencyService: could not delimit rates object");
+                return null;
+            }
+            String ratesBlock = body.substring(braceOpen + 1, braceClose);
 
-            for (String key : ratesJson.keySet()) {
-                double value = ratesJson.getDouble(key);
-                rates.put(key.toUpperCase(), value);
+            // Extract "CODE": number pairs
+            Map<String, Double> rates = new HashMap<>();
+            Matcher m = RATES_ENTRY_PATTERN.matcher(ratesBlock);
+            while (m.find()) {
+                rates.put(m.group(1).toUpperCase(), Double.parseDouble(m.group(2)));
             }
 
-            return rates;
+            return rates.isEmpty() ? null : rates;
 
         } catch (Exception e) {
             log.warn("LiveCurrencyService: JSON parse error — {}", e.getMessage());

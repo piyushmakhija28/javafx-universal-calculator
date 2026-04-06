@@ -42,6 +42,10 @@ import java.util.ResourceBundle;
  */
 public class CurrencyCalculatorController implements Initializable {
 
+    public CurrencyCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(CurrencyCalculatorController.class);
 
     @FXML private TextField   fieldAmount;

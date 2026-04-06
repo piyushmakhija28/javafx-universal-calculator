@@ -32,6 +32,10 @@ import java.util.ResourceBundle;
  */
 public class MainAppController implements Initializable {
 
+    public MainAppController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(MainAppController.class);
 
     /** The inner BorderPane that acts as the calculator area (left side of SplitPane). */

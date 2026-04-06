@@ -30,6 +30,10 @@ import java.util.ResourceBundle;
  */
 public class TipCalculatorController implements Initializable {
 
+    public TipCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(TipCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";

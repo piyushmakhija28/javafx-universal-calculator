@@ -37,6 +37,10 @@ import java.util.ResourceBundle;
  */
 public class FunctionPlotterController implements Initializable {
 
+    public FunctionPlotterController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(FunctionPlotterController.class);
 
     // ── Drawing constants ────────────────────────────────────────────────────

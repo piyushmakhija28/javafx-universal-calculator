@@ -13,6 +13,10 @@ import java.util.Map;
  */
 public class SpeedCalculatorService implements CalculatorService {
 
+    public SpeedCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {
@@ -56,10 +60,10 @@ public class SpeedCalculatorService implements CalculatorService {
                     return "Error: Unknown solve target: " + solve + ". Use SPEED, DISTANCE, or TIME";
             }
 
+        } catch (NumberFormatException e) {
+            return "Error: Invalid number format — " + e.getMessage();
         } catch (IllegalArgumentException e) {
             return "Error: " + e.getMessage();
-        } catch (NumberFormatException e) {
-            return "Error: Invalid number format";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }

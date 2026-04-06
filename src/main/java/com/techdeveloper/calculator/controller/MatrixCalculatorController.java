@@ -32,6 +32,10 @@ import java.util.ResourceBundle;
  */
 public class MatrixCalculatorController implements Initializable {
 
+    public MatrixCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(MatrixCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-background-color: #1a1a1a; -fx-text-fill: #ffffff;";

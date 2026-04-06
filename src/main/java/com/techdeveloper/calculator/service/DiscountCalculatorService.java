@@ -10,6 +10,10 @@ import java.util.Map;
  */
 public class DiscountCalculatorService implements CalculatorService {
 
+    public DiscountCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

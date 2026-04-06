@@ -12,6 +12,10 @@ import java.util.Map;
  */
 public class AgeCalculatorService implements CalculatorService {
 
+    public AgeCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

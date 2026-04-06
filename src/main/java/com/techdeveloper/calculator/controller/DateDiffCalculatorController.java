@@ -27,6 +27,10 @@ import java.util.ResourceBundle;
  */
 public class DateDiffCalculatorController implements Initializable {
 
+    public DateDiffCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DateDiffCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";

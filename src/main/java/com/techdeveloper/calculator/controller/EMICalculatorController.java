@@ -25,6 +25,10 @@ import java.util.ResourceBundle;
  */
 public class EMICalculatorController implements Initializable {
 
+    public EMICalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(EMICalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";

@@ -29,6 +29,10 @@ import org.slf4j.LoggerFactory;
  */
 public class PlotterService {
 
+    public PlotterService() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(PlotterService.class);
 
     // ── Public API ──────────────────────────────────────────────────────────

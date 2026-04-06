@@ -13,6 +13,10 @@ import java.util.Map;
  */
 public class BMICalculatorService implements CalculatorService {
 
+    public BMICalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

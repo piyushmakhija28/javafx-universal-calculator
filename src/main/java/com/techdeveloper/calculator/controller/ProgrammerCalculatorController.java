@@ -27,6 +27,10 @@ import java.util.ResourceBundle;
  */
 public class ProgrammerCalculatorController implements Initializable {
 
+    public ProgrammerCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(ProgrammerCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
@@ -216,7 +220,7 @@ public class ProgrammerCalculatorController implements Initializable {
             default -> {
                 // Arithmetic: map display symbols to basic-service tokens, operate in DEC
                 String opToken = switch (operator) {
-                    case "+", "+"  -> "+";
+                    case "+"       -> "+";
                     case "−", "-"  -> "-";
                     case "×", "*"  -> "*";
                     case "÷", "/"  -> "/";

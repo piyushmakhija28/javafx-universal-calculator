@@ -11,6 +11,10 @@ import java.util.Map;
  */
 public class ProgrammerCalculatorService implements CalculatorService {
 
+    public ProgrammerCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

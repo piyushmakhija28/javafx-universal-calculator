@@ -11,6 +11,10 @@ import java.util.Map;
  */
 public class DateDiffCalculatorService implements CalculatorService {
 
+    public DateDiffCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

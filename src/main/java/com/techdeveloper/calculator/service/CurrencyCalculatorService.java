@@ -12,6 +12,10 @@ import java.util.Map;
  */
 public class CurrencyCalculatorService implements CalculatorService {
 
+    public CurrencyCalculatorService() {
+        // required for FXML
+    }
+
     // Static exchange rates relative to 1 USD (approximate reference rates)
     private static final Map<String, Double> RATES_VS_USD;
 

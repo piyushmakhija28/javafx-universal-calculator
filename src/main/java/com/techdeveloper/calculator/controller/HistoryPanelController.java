@@ -35,6 +35,10 @@ import java.util.ResourceBundle;
  */
 public class HistoryPanelController implements Initializable {
 
+    public HistoryPanelController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(HistoryPanelController.class);
 
     @FXML private ListView<HistoryEntry> historyList;

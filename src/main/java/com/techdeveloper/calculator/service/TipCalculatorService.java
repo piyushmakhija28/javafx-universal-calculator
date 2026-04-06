@@ -10,6 +10,10 @@ import java.util.Map;
  */
 public class TipCalculatorService implements CalculatorService {
 
+    public TipCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

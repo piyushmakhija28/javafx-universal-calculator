@@ -13,6 +13,10 @@ import java.util.Map;
  */
 public class MatrixCalculatorService implements CalculatorService {
 
+    public MatrixCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

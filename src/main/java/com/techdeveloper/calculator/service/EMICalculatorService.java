@@ -11,6 +11,10 @@ import java.util.Map;
  */
 public class EMICalculatorService implements CalculatorService {
 
+    public EMICalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

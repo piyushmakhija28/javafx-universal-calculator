@@ -10,6 +10,10 @@ import java.util.Map;
  */
 public class FuelCalculatorService implements CalculatorService {
 
+    public FuelCalculatorService() {
+        // required for FXML
+    }
+
     @Override
     public String calculate(Map<String, String> inputs) {
         try {

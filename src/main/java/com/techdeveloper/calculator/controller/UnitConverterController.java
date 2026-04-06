@@ -29,6 +29,10 @@ import java.util.ResourceBundle;
  */
 public class UnitConverterController implements Initializable {
 
+    public UnitConverterController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(UnitConverterController.class);
 
     @FXML private ComboBox<String> comboCategory;

@@ -28,6 +28,10 @@ import java.util.ResourceBundle;
  */
 public class FuelCalculatorController implements Initializable {
 
+    public FuelCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(FuelCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";

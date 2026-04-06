@@ -24,6 +24,10 @@ import java.util.ResourceBundle;
  */
 public class BasicCalculatorController implements Initializable {
 
+    public BasicCalculatorController() {
+        // required for FXML
+    }
+
     private static final Logger log = LoggerFactory.getLogger(BasicCalculatorController.class);
 
     private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
@@ -185,10 +189,10 @@ public class BasicCalculatorController implements Initializable {
     private String evaluate(String left, String operator, String right) {
         // Normalise display symbols to service tokens
         String opToken = switch (operator) {
-            case "+", "+" -> "+";
-            case "−", "-" -> "-";
-            case "×", "*" -> "*";
-            case "÷", "/" -> "/";
+            case "+"       -> "+";
+            case "−", "-"  -> "-";
+            case "×", "*"  -> "*";
+            case "÷", "/"  -> "/";
             default       -> operator;
         };
         Map<String, String> inputs = new LinkedHashMap<>();

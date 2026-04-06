@@ -18,6 +18,10 @@ import javafx.stage.Stage;
  */
 public class UniversalCalculatorApp extends Application {
 
+    public UniversalCalculatorApp() {
+        // required for FXML
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(
