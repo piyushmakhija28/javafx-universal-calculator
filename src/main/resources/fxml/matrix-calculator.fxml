@@ -23,10 +23,10 @@
            style="-fx-text-fill: #e0e0e0; -fx-font-size: 20px; -fx-font-weight: bold;"/>
 
     <!-- Size Toggle -->
+    <fx:define>
+        <ToggleGroup fx:id="sizeToggle"/>
+    </fx:define>
     <HBox spacing="16">
-        <fx:define>
-            <ToggleGroup fx:id="sizeToggle"/>
-        </fx:define>
         <Label text="Size:" style="-fx-text-fill: #9e9e9e;"/>
         <RadioButton fx:id="rb2x2" text="2×2" toggleGroup="$sizeToggle" selected="true"
                      style="-fx-text-fill: #e0e0e0;" onAction="#onSizeChange"/>

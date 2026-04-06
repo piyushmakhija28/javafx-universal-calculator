@@ -28,10 +28,10 @@
                       -fx-padding: 8 12 8 12;"/>
 
     <!-- Base Selector: HEX / DEC / OCT / BIN -->
+    <fx:define>
+        <ToggleGroup fx:id="baseToggle"/>
+    </fx:define>
     <HBox spacing="8">
-        <fx:define>
-            <ToggleGroup fx:id="baseToggle"/>
-        </fx:define>
         <RadioButton fx:id="rbHex" text="HEX" toggleGroup="$baseToggle"
                      style="-fx-text-fill: #e0e0e0;" onAction="#onBaseChange"/>
         <RadioButton fx:id="rbDec" text="DEC" toggleGroup="$baseToggle" selected="true"

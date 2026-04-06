@@ -27,10 +27,10 @@
                       -fx-padding: 8 12 8 12;"/>
 
     <!-- DEG / RAD Toggle -->
+    <fx:define>
+        <ToggleGroup fx:id="angleToggle"/>
+    </fx:define>
     <HBox spacing="8">
-        <fx:define>
-            <ToggleGroup fx:id="angleToggle"/>
-        </fx:define>
         <ToggleButton fx:id="btnDeg" text="DEG" toggleGroup="$angleToggle" selected="true"
                       styleClass="calc-button"
                       style="-fx-min-width: 60px;"
