@@ -1,7 +1,12 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.service.CalculationEvent;
 import com.techdeveloper.calculator.service.HistoryEntry;
+import com.techdeveloper.calculator.service.HistoryObserver;
 import com.techdeveloper.calculator.service.HistoryService;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -23,17 +28,18 @@ import java.util.ResourceBundle;
  * Controller for history-panel.fxml.
  *
  * Responsibilities:
- *   - Bind historyList to HistoryService.getEntries() (live ObservableList).
+ *   - Own a local ObservableList<HistoryEntry> seeded from the service snapshot.
+ *   - Implement HistoryObserver to receive new entries and update the list on the FX thread.
  *   - Install a custom cell factory that renders each HistoryEntry as:
  *       [time] Type | inputs = result    [Copy]
  *     The Copy button writes the entry's toString() to the system clipboard.
  *   - Handle "Clear History" button.
  *
  * Thread safety:
+ *   onCalculation() is dispatched to the JavaFX Application Thread via Platform.runLater().
  *   All FXML lifecycle methods and event handlers run on the JavaFX Application Thread.
- *   No background work is performed here.
  */
-public class HistoryPanelController implements Initializable {
+public class HistoryPanelController implements Initializable, HistoryObserver {
 
     public HistoryPanelController() {
         // required for FXML
@@ -44,22 +50,44 @@ public class HistoryPanelController implements Initializable {
     @FXML private ListView<HistoryEntry> historyList;
     @FXML private Button btnClear;
 
+    /** Local observable mirror — updated via HistoryObserver and on clear. */
+    private final ObservableList<HistoryEntry> observableEntries =
+            FXCollections.observableArrayList();
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Bind the ListView directly to the live ObservableList.
-        // Any addEntry() or clear() call on HistoryService will automatically
-        // refresh the ListView without any additional wiring.
-        historyList.setItems(HistoryService.getInstance().getEntries());
+        // Seed the observable list from the current snapshot.
+        observableEntries.setAll(HistoryService.getInstance().getEntries());
+
+        // Bind the ListView to our local observable list.
+        historyList.setItems(observableEntries);
+
+        // Register as observer so new entries arrive via onCalculation().
+        HistoryService.getInstance().addObserver(this);
 
         // Custom cell factory: each cell shows the entry text plus a "Copy" button.
         historyList.setCellFactory(listView -> new HistoryCell());
 
-        log.debug("HistoryPanelController initialized — ListView bound to HistoryService");
+        log.debug("HistoryPanelController initialized — ListView bound to local ObservableList");
+    }
+
+    /**
+     * Called by HistoryService when a new calculation is recorded.
+     * Dispatched to the JavaFX Application Thread.
+     */
+    @Override
+    public void onCalculation(CalculationEvent<?, ?> event) {
+        // The service addEntry already created the HistoryEntry — re-read the snapshot
+        // to stay in sync (handles MAX_ENTRIES eviction automatically).
+        Platform.runLater(() -> {
+            observableEntries.setAll(HistoryService.getInstance().getEntries());
+        });
     }
 
     @FXML
     private void onClear(ActionEvent event) {
         HistoryService.getInstance().clear();
+        observableEntries.clear();
         log.info("History cleared by user via history panel");
     }
 
