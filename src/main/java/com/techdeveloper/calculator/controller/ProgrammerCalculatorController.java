@@ -189,31 +189,68 @@ public class ProgrammerCalculatorController implements Initializable {
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /**
-     * Evaluate a binary arithmetic operation (not bitwise) on the programmer calculator.
-     * Maps display operator symbols to service operation tokens.
+     * Evaluate a binary operation on the programmer calculator.
+     * Bitwise ops (AND/OR/XOR/SHL/SHR/MOD) → ProgrammerCalculatorService.
+     * Arithmetic ops (+/−/×/÷) → BasicCalculatorService (after converting to DEC).
      */
     private String evaluateBinary(String left, String operator, String right) {
-        // Map display symbols to their PROGRAMMER service operation names
-        String opToken = switch (operator.toUpperCase()) {
-            case "AND" -> "AND";
-            case "OR"  -> "OR";
-            case "XOR" -> "XOR";
-            case "SHL" -> "SHL";
-            case "SHR" -> "SHR";
-            case "MOD" -> "MOD";
-            default    -> operator.toUpperCase();
-        };
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",      left);
-        inputs.put("operation",  opToken);
-        inputs.put("operand2",   right);
-        inputs.put("inputBase",  currentBase);
-        inputs.put("outputBase", currentBase);
-        String result = callService(inputs);
-        if (!result.startsWith("Error:")) {
-            return extractValue(result);
+        switch (operator.toUpperCase()) {
+            case "AND", "OR", "XOR", "SHL", "SHR", "MOD" -> {
+                Map<String, String> inputs = new LinkedHashMap<>();
+                inputs.put("value",      left);
+                inputs.put("operation",  operator.toUpperCase());
+                inputs.put("operand2",   right);
+                inputs.put("inputBase",  currentBase);
+                inputs.put("outputBase", currentBase);
+                String result = callService(inputs);
+                return result.startsWith("Error:") ? result : extractValue(result);
+            }
+            default -> {
+                // Arithmetic: map display symbols to basic-service tokens, operate in DEC
+                String opToken = switch (operator) {
+                    case "+", "+"  -> "+";
+                    case "−", "-"  -> "-";
+                    case "×", "*"  -> "*";
+                    case "÷", "/"  -> "/";
+                    default        -> operator;
+                };
+                // Convert operands to DEC first if not already
+                String decLeft  = toDecimal(left);
+                String decRight = toDecimal(right);
+                Map<String, String> inputs = new LinkedHashMap<>();
+                inputs.put("operand1", decLeft);
+                inputs.put("operator", opToken);
+                inputs.put("operand2", decRight);
+                try {
+                    CalculatorService basic = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
+                    String decResult = basic.calculate(inputs);
+                    if (decResult.startsWith("Error:")) return decResult;
+                    // Convert result back to currentBase
+                    Map<String, String> conv = new LinkedHashMap<>();
+                    conv.put("value",      decResult);
+                    conv.put("operation",  "CONVERT");
+                    conv.put("inputBase",  "DEC");
+                    conv.put("outputBase", currentBase);
+                    String converted = callService(conv);
+                    return converted.startsWith("Error:") ? converted : extractValue(converted);
+                } catch (IllegalArgumentException e) {
+                    log.warn("BASIC service unavailable for arithmetic in Programmer controller", e);
+                    return "Error: Service not available";
+                }
+            }
         }
-        return result;
+    }
+
+    /** Convert a value from currentBase to DEC string for arithmetic ops. */
+    private String toDecimal(String value) {
+        if ("DEC".equals(currentBase)) return value;
+        Map<String, String> inputs = new LinkedHashMap<>();
+        inputs.put("value",      value);
+        inputs.put("operation",  "CONVERT");
+        inputs.put("inputBase",  currentBase);
+        inputs.put("outputBase", "DEC");
+        String result = callService(inputs);
+        return result.startsWith("Error:") ? value : extractValue(result);
     }
 
     private void applyResult(String result) {

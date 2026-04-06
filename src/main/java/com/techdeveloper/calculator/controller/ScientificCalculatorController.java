@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -28,6 +29,17 @@ public class ScientificCalculatorController implements Initializable {
 
     private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
     private static final String ERROR_STYLE  = "-fx-text-fill: #ff6b6b;";
+
+    /** Maps FXML button display text → service operation token. */
+    private static final Map<String, String> BUTTON_TO_OP = Map.of(
+        "x²",  "square",
+        "x^y", "power",
+        "n!",  "factorial",
+        "e^x", "exp",
+        "√",   "sqrt",
+        "log", "log",
+        "ln",  "ln"
+    );
 
     @FXML private TextField display;
     @FXML private ToggleButton btnDeg;
@@ -113,7 +125,8 @@ public class ScientificCalculatorController implements Initializable {
 
     @FXML
     private void onScientific(ActionEvent event) {
-        String func = ((Button) event.getSource()).getText().toLowerCase().trim();
+        String btnText = ((Button) event.getSource()).getText().trim();
+        String func = BUTTON_TO_OP.getOrDefault(btnText, btnText.toLowerCase());
         Map<String, String> inputs = new LinkedHashMap<>();
         inputs.put("value",     currentInput);
         inputs.put("operation", func);

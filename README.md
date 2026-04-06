@@ -516,12 +516,12 @@ Do NOT add new FXML files. Do NOT change Service logic. Integration only.
 
 ---
 
-## Phase D — QA Verification (SEQUENTIAL)
+## Phase D — QA Verification (SEQUENTIAL) ✅ COMPLETE
 
 > **Mode: SEQUENTIAL** | Runs AFTER Phase C completes
 > Gate: Coverage matrix must be PASS or CONDITIONAL PASS before Phase E
 
-### D.1 — Full QA Coverage Check
+### D.1 — Full QA Coverage Check ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -591,7 +591,10 @@ CONSTRAINT (read last): Read actual files — do NOT use agent self-reports.
 Missing file = FAIL for that row. Correctness unverifiable without execution = CONDITIONAL PASS.
 ```
 
-> ⛔ **GATE**: If QA returns `FAIL` → fix blocking items and re-run D.1 before Phase E starts.
+> ✅ **QA VERDICT: APPROVED** — 60/60 cells PASS. Two runtime bugs found and fixed post-QA:
+> - W-001: `ScientificCalculatorController` — added `BUTTON_TO_OP` map (`x²`→`square`, `x^y`→`power`, `n!`→`factorial`)
+> - W-002: `ProgrammerCalculatorController` — arithmetic ops (`÷×−+`) now delegate to `BasicCalculatorService` (with base conversion); bitwise ops still use `ProgrammerCalculatorService`
+> Phase E is now unlocked.
 
 ---
 
