@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+
+<BorderPane fx:id="mainLayout"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.techdeveloper.calculator.controller.MainAppController"
+            stylesheets="@../css/dark-theme.css">
+
+    <top>
+        <MenuBar styleClass="menu-bar">
+
+            <!-- Basic Menu -->
+            <Menu text="Basic">
+                <MenuItem fx:id="menuBasic"
+                          text="Basic Calculator"
+                          onAction="#loadBasic"/>
+            </Menu>
+
+            <!-- Science Menu -->
+            <Menu text="Science">
+                <MenuItem fx:id="menuScientific"
+                          text="Scientific Calculator"
+                          onAction="#loadScientific"/>
+                <MenuItem fx:id="menuProgrammer"
+                          text="Programmer Calculator"
+                          onAction="#loadProgrammer"/>
+                <SeparatorMenuItem/>
+                <MenuItem fx:id="menuMatrix"
+                          text="Matrix Calculator"
+                          onAction="#loadMatrix"/>
+                <MenuItem fx:id="menuStatistics"
+                          text="Statistics Calculator"
+                          onAction="#loadStatistics"/>
+            </Menu>
+
+            <!-- Finance Menu -->
+            <Menu text="Finance">
+                <MenuItem fx:id="menuEMI"
+                          text="EMI / Loan Calculator"
+                          onAction="#loadEMI"/>
+                <MenuItem fx:id="menuCurrency"
+                          text="Currency Converter"
+                          onAction="#loadCurrency"/>
+                <SeparatorMenuItem/>
+                <MenuItem fx:id="menuTip"
+                          text="Tip Calculator"
+                          onAction="#loadTip"/>
+                <MenuItem fx:id="menuDiscount"
+                          text="Discount Calculator"
+                          onAction="#loadDiscount"/>
+            </Menu>
+
+            <!-- Health Menu -->
+            <Menu text="Health">
+                <MenuItem fx:id="menuBMI"
+                          text="BMI Calculator"
+                          onAction="#loadBMI"/>
+                <MenuItem fx:id="menuAge"
+                          text="Age Calculator"
+                          onAction="#loadAge"/>
+            </Menu>
+
+            <!-- Utilities Menu -->
+            <Menu text="Utilities">
+                <MenuItem fx:id="menuDateDiff"
+                          text="Date Difference"
+                          onAction="#loadDateDiff"/>
+                <MenuItem fx:id="menuUnit"
+                          text="Unit Converter"
+                          onAction="#loadUnit"/>
+                <SeparatorMenuItem/>
+                <MenuItem fx:id="menuSpeed"
+                          text="Speed / Distance / Time"
+                          onAction="#loadSpeed"/>
+                <MenuItem fx:id="menuFuel"
+                          text="Fuel Efficiency"
+                          onAction="#loadFuel"/>
+            </Menu>
+
+        </MenuBar>
+    </top>
+
+    <!-- center: loaded dynamically by ViewRouter via MainAppController -->
+
+</BorderPane>

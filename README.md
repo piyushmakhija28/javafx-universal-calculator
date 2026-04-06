@@ -88,24 +88,27 @@
 src/
 └── main/
     ├── java/com/techdeveloper/calculator/
-    │   ├── App.java                        ← JavaFX Application entry point
+    │   ├── UniversalCalculatorApp.java     ← JavaFX Application entry point (loads main.fxml)
     │   ├── ViewRouter.java                 ← Singleton: loads FXML into BorderPane.center
     │   ├── controller/
+    │   │   ├── MainAppController.java      ← Handles all 15 MenuBar onAction handlers
     │   │   ├── BasicCalculatorController.java
     │   │   ├── ScientificCalculatorController.java
-    │   │   └── ... (15 controllers total)
+    │   │   └── ... (15 calculator controllers)
     │   └── service/
     │       ├── CalculatorService.java      ← Interface: calculate(Map<String,String>) → String
+    │       ├── CalculatorType.java         ← Enum: 15 calculator type constants
+    │       ├── ServiceFactory.java         ← Singleton: EnumMap-backed service registry
     │       ├── BasicCalculatorService.java
     │       ├── ScientificCalculatorService.java
-    │       └── ... (15 service classes + 1 ServiceFactory)
+    │       └── ... (15 service implementations)
     └── resources/
         ├── fxml/
-        │   ├── main.fxml                   ← Root layout (BorderPane + MenuBar)
+        │   ├── main.fxml                   ← Root layout (BorderPane + MenuBar, 5 menus)
         │   ├── basic-calculator.fxml
         │   └── ... (15 calculator FXML files)
         └── css/
-            └── dark-theme.css              ← Global dark theme tokens
+            └── dark-theme.css              ← Global dark theme design tokens
 ```
 
 ---
@@ -135,11 +138,11 @@ Each phase has subtasks, assigned agents, execution mode (parallel/sequential), 
 
 ---
 
-## Phase A — Foundation & Architecture
+## Phase A — Foundation & Architecture ✅ COMPLETE
 
 > **Mode: SEQUENTIAL** | Gate: consensus-agent must return `APPROVED` before Phase B starts
 
-### A.1 — Architecture Blueprint
+### A.1 — Architecture Blueprint ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -185,7 +188,7 @@ Output: Structured Markdown document titled GSD-v1.0.
 
 ---
 
-### A.2 — Blueprint Validation Gate
+### A.2 — Blueprint Validation Gate ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
