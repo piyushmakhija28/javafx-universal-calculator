@@ -9,7 +9,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,28 +21,28 @@ import java.util.ResourceBundle;
 /**
  * Controller for statistics-calculator.fxml.
  * Statistics on large data sets run on a background Task.
- * Platform.runLater() is used to update all result Labels after completion.
+ * Platform.runLater() is used to update the resultArea TextArea after completion.
+ *
+ * Service input: "data" — comma-separated numbers.
+ * Service returns a pipe-delimited result string; displayed directly in resultArea.
  */
 public class StatisticsCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private TextArea inputArea;
-    @FXML private Label labelMean;
-    @FXML private Label labelMedian;
-    @FXML private Label labelMode;
-    @FXML private Label labelStdDev;
-    @FXML private Label labelVariance;
-    @FXML private Label labelMin;
-    @FXML private Label labelMax;
-    @FXML private Label labelCount;
+    @FXML private TextArea resultArea;
 
     /** Cancellable reference to the in-flight computation task. */
     private Task<String> currentTask;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // No setup needed; TextArea starts empty
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.STATISTICS);
+        log.debug("StatisticsCalculatorController initialized, service={}", svc.getClass().getSimpleName());
     }
 
     @FXML
@@ -59,8 +58,8 @@ public class StatisticsCalculatorController implements Initializable {
             currentTask.cancel();
         }
 
-        clearResults();
-        setAllResultLabels("Computing...", "#9e9e9e", "14px");
+        resultArea.setStyle(NORMAL_STYLE);
+        resultArea.setText("Computing...");
 
         Map<String, String> inputs = new LinkedHashMap<>();
         inputs.put("data", rawInput);
@@ -82,7 +81,8 @@ public class StatisticsCalculatorController implements Initializable {
             Throwable ex = currentTask.getException();
             log.error("Statistics Task failed", ex);
             Platform.runLater(() -> {
-                setAllResultLabels("Error", "#ff6b6b", "13px");
+                resultArea.setStyle(ERROR_STYLE);
+                resultArea.setText("Error: Computation failed — " + ex.getMessage());
                 showErrorDialog("Computation Error",
                         "Statistics calculation failed.\n" + ex.getMessage());
             });
@@ -94,53 +94,14 @@ public class StatisticsCalculatorController implements Initializable {
         log.debug("Statistics task started for {} chars of input", rawInput.length());
     }
 
-    // ── Result parsing ─────────────────────────────────────────────────────
-    // Expected format: "mean=<v>|median=<v>|mode=<v>|stddev=<v>|variance=<v>|min=<v>|max=<v>|count=<v>"
-
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            setAllResultLabels("Error", "#ff6b6b", "13px");
+            resultArea.setStyle(ERROR_STYLE);
             log.warn("Statistics service returned error: {}", result);
-            return;
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelMean,     parsed.getOrDefault("mean",     "—"), "#4a90d9", "18px");
-        setLabel(labelMedian,   parsed.getOrDefault("median",   "—"), "#4a90d9", "18px");
-        setLabel(labelMode,     parsed.getOrDefault("mode",     "—"), "#4a90d9", "18px");
-        setLabel(labelCount,    parsed.getOrDefault("count",    "—"), "#ffffff", "18px");
-        setLabel(labelStdDev,   parsed.getOrDefault("stddev",   "—"), "#ffffff", "16px");
-        setLabel(labelVariance, parsed.getOrDefault("variance", "—"), "#ffffff", "16px");
-        setLabel(labelMin,      parsed.getOrDefault("min",      "—"), "#ffffff", "16px");
-        setLabel(labelMax,      parsed.getOrDefault("max",      "—"), "#ffffff", "16px");
-    }
-
-    private void clearResults() {
-        for (Label lbl : new Label[]{labelMean, labelMedian, labelMode, labelStdDev,
-                                      labelVariance, labelMin, labelMax, labelCount}) {
-            if (lbl != null) lbl.setText("—");
-        }
-    }
-
-    private void setAllResultLabels(String text, String color, String size) {
-        for (Label lbl : new Label[]{labelMean, labelMedian, labelMode, labelStdDev,
-                                      labelVariance, labelMin, labelMax, labelCount}) {
-            setLabel(lbl, text, color, size);
-        }
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        if (label == null) return;
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

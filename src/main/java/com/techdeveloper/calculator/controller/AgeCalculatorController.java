@@ -8,7 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,22 +21,26 @@ import java.util.ResourceBundle;
 /**
  * Controller for age-calculator.fxml.
  * Reads DOB and target date (defaults to today) from DatePickers and delegates to service.
+ * Service inputs: "birthDate" (YYYY-MM-DD), "toDate" (YYYY-MM-DD, optional).
+ * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class AgeCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(AgeCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private DatePicker pickerDOB;
     @FXML private DatePicker pickerTarget;
-    @FXML private Label labelYears;
-    @FXML private Label labelMonths;
-    @FXML private Label labelDays;
-    @FXML private Label labelTotalDays;
+    @FXML private TextArea   resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.AGE);
+        log.debug("AgeCalculatorController initialized, service={}", svc.getClass().getSimpleName());
         // Pre-populate target date with today
-        pickerTarget.setValue(LocalDate.now());
+        if (pickerTarget != null) pickerTarget.setValue(LocalDate.now());
     }
 
     @FXML
@@ -46,8 +50,9 @@ public class AgeCalculatorController implements Initializable {
             showErrorDialog("Missing Input", "Please select a date of birth.");
             return;
         }
-        LocalDate target = pickerTarget.getValue();
-        if (target == null) target = LocalDate.now();
+        LocalDate target = (pickerTarget != null && pickerTarget.getValue() != null)
+                           ? pickerTarget.getValue()
+                           : LocalDate.now();
 
         if (dob.isAfter(target)) {
             showErrorDialog("Invalid Date", "Date of birth cannot be after the target date.");
@@ -55,8 +60,8 @@ public class AgeCalculatorController implements Initializable {
         }
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("dob",    dob.toString());
-        inputs.put("target", target.toString());
+        inputs.put("birthDate", dob.toString());
+        inputs.put("toDate",    target.toString());
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.AGE);
@@ -65,43 +70,17 @@ public class AgeCalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("AGE service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // Result format: "years=<n>|months=<n>|days=<n>|totalDays=<n>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelYears,     parsed.getOrDefault("years",     "—"), "#4a90d9", "22px");
-        setLabel(labelMonths,    parsed.getOrDefault("months",    "—"), "#ffffff", "16px");
-        setLabel(labelDays,      parsed.getOrDefault("days",      "—"), "#ffffff", "16px");
-        setLabel(labelTotalDays, parsed.getOrDefault("totalDays", "—"), "#9e9e9e", "14px");
-    }
-
-    private void displayError(String message) {
-        setLabel(labelYears,     "Error: " + message, "#ff6b6b", "14px");
-        setLabel(labelMonths,    "—", "#9e9e9e", "14px");
-        setLabel(labelDays,      "—", "#9e9e9e", "14px");
-        setLabel(labelTotalDays, "—", "#9e9e9e", "14px");
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

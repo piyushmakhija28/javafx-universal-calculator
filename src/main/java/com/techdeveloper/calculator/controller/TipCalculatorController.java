@@ -11,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,31 +23,36 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for tip-calculator.fxml.
- * Binds the slider to its percentage label and delegates computation to service.
+ * Binds the slider to its percentage label and delegates computation to TipCalculatorService.
+ * Service inputs: "billAmount", "tipPercent", "splitBy".
+ * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class TipCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(TipCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private TextField fieldBill;
     @FXML private Slider sliderTip;
     @FXML private Label labelTipPercent;
     @FXML private Spinner<Integer> spinnerSplit;
-    @FXML private Label labelTipAmount;
-    @FXML private Label labelTotal;
-    @FXML private Label labelPerPerson;
+    @FXML private TextArea resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Wire spinner value factory (FXML SpinnerValueFactory requires specific setup)
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.TIP);
+        log.debug("TipCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+
+        // Wire spinner value factory
         spinnerSplit.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 1));
 
         // Bind slider to the percentage label
         sliderTip.valueProperty().addListener((obs, oldVal, newVal) -> {
             int pct = newVal.intValue();
-            labelTipPercent.setText(pct + "%");
+            if (labelTipPercent != null) labelTipPercent.setText(pct + "%");
         });
-        log.debug("TipCalculatorController initialized");
     }
 
     @FXML
@@ -61,9 +67,9 @@ public class TipCalculatorController implements Initializable {
         int splitCount = spinnerSplit.getValue();
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("bill",      bill);
+        inputs.put("billAmount", bill);
         inputs.put("tipPercent", String.valueOf(tipPercent));
-        inputs.put("split",     String.valueOf(splitCount));
+        inputs.put("splitBy",    String.valueOf(splitCount));
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.TIP);
@@ -72,41 +78,17 @@ public class TipCalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("TIP service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // Result format: "tip=<value>|total=<value>|perPerson=<value>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelTipAmount, parsed.getOrDefault("tip",       "—"), "#4a90d9", "18px");
-        setLabel(labelTotal,     parsed.getOrDefault("total",     "—"), "#ffffff", "16px");
-        setLabel(labelPerPerson, parsed.getOrDefault("perPerson", "—"), "#2ecc71", "18px");
-    }
-
-    private void displayError(String message) {
-        setLabel(labelTipAmount, "Error: " + message, "#ff6b6b", "14px");
-        setLabel(labelTotal,     "—", "#9e9e9e", "14px");
-        setLabel(labelPerPerson, "—", "#9e9e9e", "14px");
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

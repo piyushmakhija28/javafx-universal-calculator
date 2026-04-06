@@ -468,12 +468,12 @@ README must include all 15 calculator types with button details.
 
 ---
 
-## Phase C — Integration (SEQUENTIAL)
+## Phase C — Integration (SEQUENTIAL) ✅ COMPLETE
 
 > **Mode: SEQUENTIAL** | Runs AFTER B.1 and B.2 both complete
 > Gate: All 15 calculators must load without NullPointerException
 
-### C.1 — Wire Service Layer into Controllers
+### C.1 — Wire Service Layer into Controllers ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -511,6 +511,8 @@ FILE REPORT: Path | Lines Added | Lines Removed | Summary
 
 Do NOT add new FXML files. Do NOT change Service logic. Integration only.
 ```
+
+> ✅ **PHASE C COMPLETE**: All 15 controllers wired to their services via `ServiceFactory`. Pipe-parsing removed — results displayed directly via `resultArea.setText()`. 8 FXML files updated (multi-label → single `TextArea`). Matrix and Statistics retain `Task<String>` + `Platform.runLater()`. SLF4J + Logback added to `pom.xml` and `module-info.java`. Phase D is now unlocked.
 
 ---
 

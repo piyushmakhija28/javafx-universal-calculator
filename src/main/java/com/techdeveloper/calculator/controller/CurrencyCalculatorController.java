@@ -23,6 +23,8 @@ import java.util.ResourceBundle;
 /**
  * Controller for currency-calculator.fxml.
  * Populates the 20 currency combo boxes in initialize() and delegates conversion to service.
+ * Service inputs: "amount", "fromCurrency" (3-letter code), "toCurrency" (3-letter code).
+ * Result displayed directly in labelResult — no pipe-parsing.
  */
 public class CurrencyCalculatorController implements Initializable {
 
@@ -49,7 +51,7 @@ public class CurrencyCalculatorController implements Initializable {
             "SEK - Swedish Krona",
             "NOK - Norwegian Krone",
             "NZD - New Zealand Dollar",
-            "KRW - South Korean Won",
+            "DKK - Danish Krone",
             "BRL - Brazilian Real",
             "ZAR - South African Rand",
             "MXN - Mexican Peso",
@@ -59,12 +61,12 @@ public class CurrencyCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.CURRENCY);
+        log.debug("CurrencyCalculatorController initialized, service={}", svc.getClass().getSimpleName());
         comboFrom.setItems(FXCollections.observableArrayList(CURRENCIES));
         comboTo.setItems(FXCollections.observableArrayList(CURRENCIES));
-        // Default selection
         comboFrom.getSelectionModel().select(0); // USD
         comboTo.getSelectionModel().select(3);   // INR
-        log.debug("CurrencyCalculatorController initialized with {} currencies", CURRENCIES.size());
     }
 
     @FXML
@@ -86,33 +88,29 @@ public class CurrencyCalculatorController implements Initializable {
         String toCode   = extractCode(toItem);
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("amount", amountText);
-        inputs.put("from",   fromCode);
-        inputs.put("to",     toCode);
+        inputs.put("amount",       amountText);
+        inputs.put("fromCurrency", fromCode);
+        inputs.put("toCurrency",   toCode);
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.CURRENCY);
             String result = svc.calculate(inputs);
             log.debug("Currency conversion result: {}", result);
-            displayResult(result, fromCode, toCode);
+            displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("CURRENCY service not registered", e);
-            setErrorLabel("Service not available");
+            displayResult("Error: Service not available");
         }
     }
 
-    private void displayResult(String result, String fromCode, String toCode) {
+    private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            setErrorLabel(result.substring("Error:".length()).trim());
+            labelResult.setText(result);
+            labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
         } else {
-            labelResult.setText(result + " " + toCode);
-            labelResult.setStyle("-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;");
+            labelResult.setText(result);
+            labelResult.setStyle("-fx-text-fill: #4a90d9; -fx-font-size: 16px; -fx-font-weight: bold;");
         }
-    }
-
-    private void setErrorLabel(String message) {
-        labelResult.setText("Error: " + message);
-        labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
     }
 
     /** Extracts the 3-letter currency code from "USD - US Dollar". */

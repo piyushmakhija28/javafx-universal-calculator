@@ -7,7 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,40 +19,48 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for fuel-calculator.fxml.
- * Collects distance, fuel used, and cost per litre; delegates to FUEL service.
- * Displays L/100km, km/L, and cost per km in result labels.
+ * Collects distance, fuelUsed, and fuelPrice (optional); delegates to FUEL service.
+ *
+ * Service input keys: "distance", "fuelUsed", "fuelPrice" (optional).
+ * Service returns: "L/100km: X | km/L: Y" or "L/100km: X | km/L: Y | Cost/km: Z | Total Cost: W"
+ * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class FuelCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(FuelCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private TextField fieldDistance;
-    @FXML private TextField fieldFuel;
-    @FXML private TextField fieldCostPerLitre;
-    @FXML private Label labelL100km;
-    @FXML private Label labelKmPerL;
-    @FXML private Label labelCostPerKm;
+    @FXML private TextField fieldFuelUsed;
+    @FXML private TextField fieldFuelPrice;
+    @FXML private TextArea  resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // No pre-population required
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.FUEL);
+        log.debug("FuelCalculatorController initialized, service={}", svc.getClass().getSimpleName());
     }
 
     @FXML
     private void onCalculate(ActionEvent event) {
-        String distance     = fieldDistance.getText().trim();
-        String fuel         = fieldFuel.getText().trim();
-        String costPerLitre = fieldCostPerLitre.getText().trim();
+        String distance  = fieldDistance.getText().trim();
+        String fuelUsed  = fieldFuelUsed.getText().trim();
+        String fuelPrice = fieldFuelPrice.getText().trim();
 
-        if (distance.isEmpty() || fuel.isEmpty()) {
-            showErrorDialog("Missing Input", "Please enter at least distance and fuel used.");
+        if (distance.isEmpty() || fuelUsed.isEmpty()) {
+            showErrorDialog("Missing Input", "Please enter at least Distance and Fuel Used.");
             return;
         }
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("distance",     distance);
-        inputs.put("fuel",         fuel);
-        inputs.put("costPerLitre", costPerLitre.isEmpty() ? "0" : costPerLitre);
+        inputs.put("distance", distance);
+        inputs.put("fuelUsed", fuelUsed);
+        // Only pass fuelPrice when user supplied a value — service treats absence as "no cost calc"
+        if (!fuelPrice.isEmpty()) {
+            inputs.put("fuelPrice", fuelPrice);
+        }
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.FUEL);
@@ -61,41 +69,18 @@ public class FuelCalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("FUEL service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // Result format: "l100km=<v>|kmPerL=<v>|costPerKm=<v>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+            log.warn("Fuel service returned error: {}", result);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelL100km,    parsed.getOrDefault("l100km",    "—"), "#4a90d9", "18px");
-        setLabel(labelKmPerL,    parsed.getOrDefault("kmPerL",    "—"), "#2ecc71", "18px");
-        setLabel(labelCostPerKm, parsed.getOrDefault("costPerKm", "—"), "#ffffff", "16px");
-    }
-
-    private void displayError(String message) {
-        setLabel(labelL100km,    "Error: " + message, "#ff6b6b", "14px");
-        setLabel(labelKmPerL,    "—", "#9e9e9e", "14px");
-        setLabel(labelCostPerKm, "—", "#9e9e9e", "14px");
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

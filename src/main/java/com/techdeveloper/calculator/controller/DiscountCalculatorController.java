@@ -7,7 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,20 +19,25 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for discount-calculator.fxml.
- * Reads original price and discount percentage, delegates to service.
+ * Reads original price and discount percentage, delegates to DiscountCalculatorService.
+ * Service inputs: "originalPrice", "discountPercent".
+ * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class DiscountCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(DiscountCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private TextField fieldOriginalPrice;
     @FXML private TextField fieldDiscount;
-    @FXML private Label labelFinalPrice;
-    @FXML private Label labelAmountSaved;
+    @FXML private TextArea  resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // No pre-population required
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DISCOUNT);
+        log.debug("DiscountCalculatorController initialized, service={}", svc.getClass().getSimpleName());
     }
 
     @FXML
@@ -46,8 +51,8 @@ public class DiscountCalculatorController implements Initializable {
         }
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("originalPrice", price);
-        inputs.put("discount",      discount);
+        inputs.put("originalPrice",   price);
+        inputs.put("discountPercent", discount);
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DISCOUNT);
@@ -56,39 +61,17 @@ public class DiscountCalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("DISCOUNT service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // Result format: "finalPrice=<value>|amountSaved=<value>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelFinalPrice,  parsed.getOrDefault("finalPrice",  "—"), "#2ecc71", "22px");
-        setLabel(labelAmountSaved, parsed.getOrDefault("amountSaved", "—"), "#4a90d9", "18px");
-    }
-
-    private void displayError(String message) {
-        setLabel(labelFinalPrice,  "Error: " + message, "#ff6b6b", "14px");
-        setLabel(labelAmountSaved, "—", "#9e9e9e", "14px");
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

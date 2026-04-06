@@ -23,7 +23,8 @@ import java.util.ResourceBundle;
 /**
  * Controller for speed-calculator.fxml.
  * "Solve For" ComboBox tells the service which variable to compute.
- * The field corresponding to the solved variable should be left blank by the user.
+ * Service input key is "solve" (SPEED / DISTANCE / TIME), plus "speed", "distance", "time".
+ * Result displayed directly in labelResult — no pipe-parsing.
  */
 public class SpeedCalculatorController implements Initializable {
 
@@ -37,54 +38,48 @@ public class SpeedCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SPEED);
+        log.debug("SpeedCalculatorController initialized, service={}", svc.getClass().getSimpleName());
         comboSolveFor.setItems(FXCollections.observableArrayList(
                 List.of("Speed", "Distance", "Time")));
         comboSolveFor.getSelectionModel().selectFirst();
-        log.debug("SpeedCalculatorController initialized");
     }
 
     @FXML
     private void onCalculate(ActionEvent event) {
-        String solveFor = comboSolveFor.getValue();
+        String solveForDisplay = comboSolveFor.getValue();
         String speed    = fieldSpeed.getText().trim();
         String distance = fieldDistance.getText().trim();
         String time     = fieldTime.getText().trim();
 
+        // Map display selection to service token (uppercase)
+        String solveToken = solveForDisplay != null ? solveForDisplay.toUpperCase() : "SPEED";
+
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("solveFor", solveFor);
-        inputs.put("speed",    speed.isEmpty()    ? "" : speed);
-        inputs.put("distance", distance.isEmpty() ? "" : distance);
-        inputs.put("time",     time.isEmpty()      ? "" : time);
+        inputs.put("solve",    solveToken);
+        inputs.put("speed",    speed);
+        inputs.put("distance", distance);
+        inputs.put("time",     time);
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SPEED);
             String result = svc.calculate(inputs);
             log.debug("Speed result: {}", result);
-            displayResult(result, solveFor);
+            displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("SPEED service not registered", e);
-            setErrorLabel("Service not available");
+            displayResult("Error: Service not available");
         }
     }
 
-    private void displayResult(String result, String solveFor) {
+    private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            setErrorLabel(result.substring("Error:".length()).trim());
+            labelResult.setText(result);
+            labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
         } else {
-            String unit = switch (solveFor) {
-                case "Speed"    -> "km/h";
-                case "Distance" -> "km";
-                case "Time"     -> "hours";
-                default         -> "";
-            };
-            labelResult.setText(result + " " + unit);
+            labelResult.setText(result);
             labelResult.setStyle("-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;");
         }
-    }
-
-    private void setErrorLabel(String message) {
-        labelResult.setText("Error: " + message);
-        labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
     }
 
     private void showErrorDialog(String title, String message) {

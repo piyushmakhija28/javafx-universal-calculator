@@ -25,10 +25,16 @@ import java.util.ResourceBundle;
  * Controller for matrix-calculator.fxml.
  * Matrix operations run on a background Task to avoid blocking the FX Application Thread.
  * Platform.runLater() is used to push results back to the UI after Task completion.
+ *
+ * Service inputs: "operation", "matrixA" (comma-separated row-major), "matrixB", "size".
+ * Button display text is mapped to service operation names (ADD, SUBTRACT, MULTIPLY, etc.)
  */
 public class MatrixCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(MatrixCalculatorController.class);
+
+    private static final String NORMAL_STYLE = "-fx-background-color: #1a1a1a; -fx-text-fill: #ffffff;";
+    private static final String ERROR_STYLE  = "-fx-background-color: #1a1a1a; -fx-text-fill: #ff6b6b;";
 
     // ── Matrix A TextFields ────────────────────────────────────────────────
     @FXML private TextField a00; @FXML private TextField a01; @FXML private TextField a02;
@@ -51,13 +57,15 @@ public class MatrixCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // 3rd row/column fields start hidden (2x2 default); toggled by onSizeChange
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.MATRIX);
+        log.debug("MatrixCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        // 3rd row/column fields start hidden (2x2 default)
         setThirdRowVisible(false);
     }
 
     @FXML
     private void onSizeChange(ActionEvent event) {
-        matrixSize = rb3x3.isSelected() ? 3 : 2;
+        matrixSize = (rb3x3 != null && rb3x3.isSelected()) ? 3 : 2;
         setThirdRowVisible(matrixSize == 3);
         resultArea.clear();
         log.debug("Matrix size changed to {}x{}", matrixSize, matrixSize);
@@ -65,28 +73,35 @@ public class MatrixCalculatorController implements Initializable {
 
     @FXML
     private void onOperation(ActionEvent event) {
-        String operation = ((Button) event.getSource()).getText();
+        String buttonText = ((Button) event.getSource()).getText();
+        // Map display button labels to the service's expected operation names
+        String operation = mapButtonToOperation(buttonText);
 
-        // Collect matrix inputs from TextFields
+        // Build comma-separated matrix strings for the service
+        String matrixAStr = buildMatrixString("A");
+        String matrixBStr = buildMatrixString("B");
+
         Map<String, String> inputs = new LinkedHashMap<>();
         inputs.put("operation", operation);
+        inputs.put("matrixA",   matrixAStr);
+        inputs.put("matrixB",   matrixBStr);
         inputs.put("size",      String.valueOf(matrixSize));
-        collectMatrix(inputs, "A", a00, a01, a02, a10, a11, a12, a20, a21, a22);
-        collectMatrix(inputs, "B", b00, b01, b02, b10, b11, b12, b20, b21, b22);
 
         // Cancel any in-flight task
         if (currentTask != null && currentTask.isRunning()) {
             currentTask.cancel();
         }
 
+        resultArea.setStyle(NORMAL_STYLE);
         resultArea.setText("Computing...");
 
         // Background Task — matrix ops can be CPU-intensive for large sizes
+        final Map<String, String> taskInputs = inputs;
         currentTask = new Task<>() {
             @Override
             protected String call() {
                 CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.MATRIX);
-                return svc.calculate(inputs);
+                return svc.calculate(taskInputs);
             }
         };
 
@@ -100,6 +115,7 @@ public class MatrixCalculatorController implements Initializable {
             Throwable ex = currentTask.getException();
             log.error("Matrix Task failed for operation={}", operation, ex);
             Platform.runLater(() -> {
+                resultArea.setStyle(ERROR_STYLE);
                 resultArea.setText("Error: Computation failed — " + ex.getMessage());
                 showErrorDialog("Computation Error",
                         "Matrix " + operation + " failed.\n" + ex.getMessage());
@@ -116,31 +132,54 @@ public class MatrixCalculatorController implements Initializable {
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            resultArea.setStyle(resultArea.getStyle() + "; -fx-text-fill: #ff6b6b;");
+            resultArea.setStyle(ERROR_STYLE);
             resultArea.setText(result);
             log.warn("Matrix calculation returned error: {}", result);
         } else {
-            resultArea.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #ffffff;");
+            resultArea.setStyle(NORMAL_STYLE);
             resultArea.setText(result);
         }
     }
 
-    /** Reads up to 9 TextFields into the input map as "A00", "A01", ... etc. */
-    private void collectMatrix(Map<String, String> inputs, String prefix,
-                               TextField f00, TextField f01, TextField f02,
-                               TextField f10, TextField f11, TextField f12,
-                               TextField f20, TextField f21, TextField f22) {
-        inputs.put(prefix + "00", safeText(f00));
-        inputs.put(prefix + "01", safeText(f01));
-        inputs.put(prefix + "10", safeText(f10));
-        inputs.put(prefix + "11", safeText(f11));
-        if (matrixSize == 3) {
-            inputs.put(prefix + "02", safeText(f02));
-            inputs.put(prefix + "12", safeText(f12));
-            inputs.put(prefix + "20", safeText(f20));
-            inputs.put(prefix + "21", safeText(f21));
-            inputs.put(prefix + "22", safeText(f22));
+    /**
+     * Build a comma-separated, row-major string from the matrix TextFields.
+     * For 2x2: "a00,a01,a10,a11"
+     * For 3x3: "a00,a01,a02,a10,a11,a12,a20,a21,a22"
+     */
+    private String buildMatrixString(String prefix) {
+        if ("A".equals(prefix)) {
+            if (matrixSize == 2) {
+                return safeText(a00) + "," + safeText(a01) + ","
+                     + safeText(a10) + "," + safeText(a11);
+            } else {
+                return safeText(a00) + "," + safeText(a01) + "," + safeText(a02) + ","
+                     + safeText(a10) + "," + safeText(a11) + "," + safeText(a12) + ","
+                     + safeText(a20) + "," + safeText(a21) + "," + safeText(a22);
+            }
+        } else {
+            if (matrixSize == 2) {
+                return safeText(b00) + "," + safeText(b01) + ","
+                     + safeText(b10) + "," + safeText(b11);
+            } else {
+                return safeText(b00) + "," + safeText(b01) + "," + safeText(b02) + ","
+                     + safeText(b10) + "," + safeText(b11) + "," + safeText(b12) + ","
+                     + safeText(b20) + "," + safeText(b21) + "," + safeText(b22);
+            }
         }
+    }
+
+    /**
+     * Map FXML button display text to the operation name expected by MatrixCalculatorService.
+     */
+    private String mapButtonToOperation(String buttonText) {
+        return switch (buttonText.trim().toUpperCase()) {
+            case "ADD"         -> "ADD";
+            case "SUBTRACT"    -> "SUBTRACT";
+            case "MULTIPLY"    -> "MULTIPLY";
+            case "TRANSPOSE A" -> "TRANSPOSE";
+            case "DET A"       -> "DETERMINANT";
+            default            -> buttonText.trim().toUpperCase();
+        };
     }
 
     private String safeText(TextField tf) {
@@ -150,7 +189,6 @@ public class MatrixCalculatorController implements Initializable {
     }
 
     private void setThirdRowVisible(boolean visible) {
-        // Toggle the 3rd column/row TextFields for both matrices
         for (TextField tf : new TextField[]{a02, a12, a20, a21, a22,
                                              b02, b12, b20, b21, b22}) {
             if (tf != null) {

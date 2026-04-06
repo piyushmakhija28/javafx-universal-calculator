@@ -6,7 +6,6 @@ import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
@@ -26,6 +25,9 @@ public class BasicCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(BasicCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-text-fill: #ff6b6b;";
+
     @FXML private TextField display;
 
     /** Current operand being typed. */
@@ -39,6 +41,8 @@ public class BasicCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
+        log.debug("BasicCalculatorController initialized, service={}", svc.getClass().getSimpleName());
         display.setText("0");
     }
 
@@ -53,6 +57,7 @@ public class BasicCalculatorController implements Initializable {
         } else {
             currentInput = "0".equals(currentInput) ? digit : currentInput + digit;
         }
+        display.setStyle(NORMAL_STYLE);
         display.setText(currentInput);
     }
 
@@ -72,6 +77,7 @@ public class BasicCalculatorController implements Initializable {
                 return;
             }
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(currentInput);
         }
         pendingOperand = currentInput;
@@ -86,6 +92,7 @@ public class BasicCalculatorController implements Initializable {
         if (result.startsWith("Error:")) {
             showInlineError(result);
         } else {
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
             currentInput = result;
         }
@@ -102,6 +109,7 @@ public class BasicCalculatorController implements Initializable {
         pendingOperand = "";
         pendingOperator = "";
         resultJustShown = false;
+        display.setStyle(NORMAL_STYLE);
         display.setText("0");
     }
 
@@ -109,16 +117,21 @@ public class BasicCalculatorController implements Initializable {
     private void onClearEntry(ActionEvent event) {
         currentInput = "0";
         resultJustShown = false;
+        display.setStyle(NORMAL_STYLE);
         display.setText("0");
     }
 
     @FXML
     private void onPercent(ActionEvent event) {
+        // Percent: currentInput / 100
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("expression", currentInput + "%");
-        String result = callService(CalculatorType.BASIC, inputs);
+        inputs.put("operand1", currentInput);
+        inputs.put("operator", "/");
+        inputs.put("operand2", "100");
+        String result = callService(inputs);
         if (!result.startsWith("Error:")) {
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
         } else {
             showInlineError(result);
@@ -128,10 +141,12 @@ public class BasicCalculatorController implements Initializable {
     @FXML
     private void onNegate(ActionEvent event) {
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("expression", "negate(" + currentInput + ")");
-        String result = callService(CalculatorType.BASIC, inputs);
+        inputs.put("operand1", currentInput);
+        inputs.put("operator", "+-");
+        String result = callService(inputs);
         if (!result.startsWith("Error:")) {
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
         } else {
             showInlineError(result);
@@ -141,10 +156,12 @@ public class BasicCalculatorController implements Initializable {
     @FXML
     private void onSqrt(ActionEvent event) {
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("expression", "sqrt(" + currentInput + ")");
-        String result = callService(CalculatorType.BASIC, inputs);
+        inputs.put("operand1", currentInput);
+        inputs.put("operator", "sqrt");
+        String result = callService(inputs);
         if (!result.startsWith("Error:")) {
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
             resultJustShown = true;
         } else {
@@ -155,44 +172,38 @@ public class BasicCalculatorController implements Initializable {
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /**
-     * Build an expression string and forward to the BASIC service.
-     * No arithmetic logic here — purely constructs the input map.
+     * Build the correct input map for BasicCalculatorService and call it.
+     * Service expects: "operand1", "operator", "operand2" (for binary ops).
      */
     private String evaluate(String left, String operator, String right) {
-        // Map operator symbols to expression form the service understands
+        // Normalise display symbols to service tokens
         String opToken = switch (operator) {
-            case "+" -> "+";
-            case "−" -> "-";
-            case "×" -> "*";
-            case "÷" -> "/";
-            default  -> operator;
+            case "+", "+" -> "+";
+            case "−", "-" -> "-";
+            case "×", "*" -> "*";
+            case "÷", "/" -> "/";
+            default       -> operator;
         };
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("expression", left + opToken + right);
-        return callService(CalculatorType.BASIC, inputs);
+        inputs.put("operand1", left);
+        inputs.put("operator", opToken);
+        inputs.put("operand2", right);
+        return callService(inputs);
     }
 
-    private String callService(CalculatorType type, Map<String, String> inputs) {
+    private String callService(Map<String, String> inputs) {
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(type);
+            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
             return svc.calculate(inputs);
         } catch (IllegalArgumentException e) {
-            log.warn("Service not registered for type={}", type, e);
+            log.warn("Service not registered for type=BASIC", e);
             return "Error: Service not available";
         }
     }
 
     private void showInlineError(String errorMessage) {
-        display.setStyle(display.getStyle() + "; -fx-text-fill: #ff6b6b;");
+        display.setStyle(ERROR_STYLE);
         display.setText(errorMessage);
         log.warn("BasicCalculator inline error: {}", errorMessage);
-    }
-
-    private void showErrorDialog(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Calculation Error");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 }

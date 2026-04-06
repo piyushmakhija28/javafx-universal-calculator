@@ -6,7 +6,6 @@ import com.techdeveloper.calculator.service.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -21,11 +20,14 @@ import java.util.ResourceBundle;
 /**
  * Controller for scientific-calculator.fxml.
  * Handles DEG/RAD toggle, scientific function buttons, and basic arithmetic.
- * All calculations are delegated to the SCIENTIFIC service — no math here.
+ * Delegates to ScientificCalculatorService using keys: "value", "operation", "mode".
  */
 public class ScientificCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(ScientificCalculatorController.class);
+
+    private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-text-fill: #ff6b6b;";
 
     @FXML private TextField display;
     @FXML private ToggleButton btnDeg;
@@ -39,6 +41,8 @@ public class ScientificCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SCIENTIFIC);
+        log.debug("ScientificCalculatorController initialized, service={}", svc.getClass().getSimpleName());
         display.setText("0");
     }
 
@@ -61,6 +65,7 @@ public class ScientificCalculatorController implements Initializable {
         } else {
             currentInput = "0".equals(currentInput) ? digit : currentInput + digit;
         }
+        display.setStyle(NORMAL_STYLE);
         display.setText(currentInput);
     }
 
@@ -77,6 +82,7 @@ public class ScientificCalculatorController implements Initializable {
                 return;
             }
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(currentInput);
         }
         pendingOperand = currentInput;
@@ -102,28 +108,34 @@ public class ScientificCalculatorController implements Initializable {
     }
 
     // ── Scientific functions ───────────────────────────────────────────────
+    // Button text must match the operation name understood by ScientificCalculatorService:
+    // sin, cos, tan, asin, acos, atan, log, ln, sqrt, square, cube, factorial
 
     @FXML
     private void onScientific(ActionEvent event) {
-        String func = ((Button) event.getSource()).getText();
+        String func = ((Button) event.getSource()).getText().toLowerCase().trim();
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("function", func);
-        inputs.put("operand", currentInput);
-        inputs.put("angleMode", isRadians ? "RAD" : "DEG");
-        String result = callService(CalculatorType.SCIENTIFIC, inputs);
+        inputs.put("value",     currentInput);
+        inputs.put("operation", func);
+        inputs.put("mode",      isRadians ? "RAD" : "DEG");
+        String result = callService(inputs);
         applyResult(result);
         resultJustShown = true;
     }
 
     @FXML
     private void onConstant(ActionEvent event) {
-        String constant = ((Button) event.getSource()).getText();
+        String constant = ((Button) event.getSource()).getText().toLowerCase().trim();
+        // "pi" and "e" are handled by the service without a value input
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("constant", constant);
-        String result = callService(CalculatorType.SCIENTIFIC, inputs);
+        inputs.put("operation", constant);
+        String result = callService(inputs);
         if (!result.startsWith("Error:")) {
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
+        } else {
+            showInlineError(result);
         }
     }
 
@@ -132,29 +144,42 @@ public class ScientificCalculatorController implements Initializable {
     @FXML
     private void onClear(ActionEvent event) {
         reset();
+        display.setStyle(NORMAL_STYLE);
         display.setText("0");
     }
 
     @FXML
     private void onClearEntry(ActionEvent event) {
         currentInput = "0";
+        display.setStyle(NORMAL_STYLE);
         display.setText("0");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
+    /**
+     * For basic binary arithmetic (+, -, *, /) the scientific service does not directly
+     * expose a binary op — delegate those to the BASIC service via the proper keys.
+     */
     private String evaluateBinary(String left, String operator, String right) {
         String opToken = switch (operator) {
-            case "+" -> "+";
-            case "−" -> "-";
-            case "×" -> "*";
-            case "÷" -> "/";
-            default  -> operator;
+            case "+", "+" -> "+";
+            case "−", "-" -> "-";
+            case "×", "*" -> "*";
+            case "÷", "/" -> "/";
+            default       -> operator;
         };
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("expression", left + opToken + right);
-        inputs.put("angleMode", isRadians ? "RAD" : "DEG");
-        return callService(CalculatorType.SCIENTIFIC, inputs);
+        inputs.put("operand1", left);
+        inputs.put("operator", opToken);
+        inputs.put("operand2", right);
+        try {
+            CalculatorService basic = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
+            return basic.calculate(inputs);
+        } catch (IllegalArgumentException e) {
+            log.warn("BASIC service not registered for binary eval in Scientific controller", e);
+            return "Error: Service not available";
+        }
     }
 
     private void applyResult(String result) {
@@ -162,6 +187,7 @@ public class ScientificCalculatorController implements Initializable {
             showInlineError(result);
         } else {
             currentInput = result;
+            display.setStyle(NORMAL_STYLE);
             display.setText(result);
         }
     }
@@ -173,18 +199,18 @@ public class ScientificCalculatorController implements Initializable {
         resultJustShown = false;
     }
 
-    private String callService(CalculatorType type, Map<String, String> inputs) {
+    private String callService(Map<String, String> inputs) {
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(type);
+            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SCIENTIFIC);
             return svc.calculate(inputs);
         } catch (IllegalArgumentException e) {
-            log.warn("Service not registered for type={}", type, e);
+            log.warn("SCIENTIFIC service not registered", e);
             return "Error: Service not available";
         }
     }
 
     private void showInlineError(String errorMessage) {
-        display.setStyle(display.getStyle() + "; -fx-text-fill: #ff6b6b;");
+        display.setStyle(ERROR_STYLE);
         display.setText(errorMessage);
         log.warn("ScientificCalculator inline error: {}", errorMessage);
     }

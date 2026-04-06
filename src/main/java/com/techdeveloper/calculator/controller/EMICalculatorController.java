@@ -7,7 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,26 +19,25 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for emi-calculator.fxml.
- * Collects principal, rate, and tenure from the form and passes them to EMI service.
- * Displays EMI, total interest, and total amount payable in result labels.
+ * Collects principal, annualRate, and tenureMonths; passes them to EMICalculatorService.
+ * Displays the full service result string in a single resultArea — no pipe-parsing.
  */
 public class EMICalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(EMICalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private TextField fieldPrincipal;
     @FXML private TextField fieldRate;
     @FXML private TextField fieldTenure;
-    @FXML private Label labelEMI;
-    @FXML private Label labelTotalInterest;
-    @FXML private Label labelTotalAmount;
-
-    private static final String ERROR_STYLE = "-fx-text-fill: #ff6b6b;";
-    private static final String ACCENT_STYLE = "-fx-text-fill: #4a90d9; -fx-font-size: 18px; -fx-font-weight: bold;";
+    @FXML private TextArea  resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // No pre-population required; fields start empty
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.EMI);
+        log.debug("EMICalculatorController initialized, service={}", svc.getClass().getSimpleName());
     }
 
     @FXML
@@ -48,14 +47,14 @@ public class EMICalculatorController implements Initializable {
         String tenure    = fieldTenure.getText().trim();
 
         if (principal.isEmpty() || rate.isEmpty() || tenure.isEmpty()) {
-            showErrorDialog("Missing Input", "Please enter Principal, Rate, and Tenure.");
+            showErrorDialog("Missing Input", "Please enter Principal, Annual Rate, and Tenure (months).");
             return;
         }
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("principal", principal);
-        inputs.put("rate", rate);
-        inputs.put("tenure", tenure);
+        inputs.put("principal",    principal);
+        inputs.put("annualRate",   rate);
+        inputs.put("tenureMonths", tenure);
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.EMI);
@@ -64,52 +63,17 @@ public class EMICalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("EMI service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // ── Result parsing ─────────────────────────────────────────────────────
-    // The service is expected to return a pipe-delimited string:
-    //   "emi=<value>|interest=<value>|total=<value>"
-    // or "Error: <message>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        try {
-            Map<String, String> parsed = parseKeyValue(result);
-            setLabel(labelEMI, parsed.getOrDefault("emi", "—"), ACCENT_STYLE);
-            setLabel(labelTotalInterest, parsed.getOrDefault("interest", "—"),
-                    "-fx-text-fill: #ffffff; -fx-font-size: 16px;");
-            setLabel(labelTotalAmount, parsed.getOrDefault("total", "—"),
-                    "-fx-text-fill: #ffffff; -fx-font-size: 16px;");
-        } catch (Exception e) {
-            log.error("Failed to parse EMI result: {}", result, e);
-            displayError("Invalid result format");
-        }
-    }
-
-    private void displayError(String message) {
-        setLabel(labelEMI, "Error: " + message, ERROR_STYLE);
-        setLabel(labelTotalInterest, "—", "-fx-text-fill: #9e9e9e;");
-        setLabel(labelTotalAmount,   "—", "-fx-text-fill: #9e9e9e;");
-    }
-
-    private void setLabel(Label label, String text, String style) {
-        label.setText(text);
-        label.setStyle(style);
-    }
-
-    /** Parses "key1=val1|key2=val2" into a Map. */
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

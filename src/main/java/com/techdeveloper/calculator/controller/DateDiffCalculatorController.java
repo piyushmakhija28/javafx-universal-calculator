@@ -8,7 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,22 +20,25 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for date-diff-calculator.fxml.
- * Reads start and end dates and delegates difference computation to service.
+ * Reads start and end dates and delegates difference computation to DateDiffCalculatorService.
+ * Service inputs: "startDate" (YYYY-MM-DD), "endDate" (YYYY-MM-DD).
+ * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class DateDiffCalculatorController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(DateDiffCalculatorController.class);
 
+    private static final String NORMAL_STYLE = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;";
+    private static final String ERROR_STYLE  = "-fx-control-inner-background: #1a1a1a; -fx-text-fill: #ff6b6b;";
+
     @FXML private DatePicker pickerStart;
     @FXML private DatePicker pickerEnd;
-    @FXML private Label labelDays;
-    @FXML private Label labelWeeks;
-    @FXML private Label labelMonths;
-    @FXML private Label labelYears;
+    @FXML private TextArea   resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // No pre-population required
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DATE_DIFF);
+        log.debug("DateDiffCalculatorController initialized, service={}", svc.getClass().getSimpleName());
     }
 
     @FXML
@@ -56,8 +59,8 @@ public class DateDiffCalculatorController implements Initializable {
         }
 
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("start", start.toString());
-        inputs.put("end",   end.toString());
+        inputs.put("startDate", start.toString());
+        inputs.put("endDate",   end.toString());
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DATE_DIFF);
@@ -66,43 +69,17 @@ public class DateDiffCalculatorController implements Initializable {
             displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("DATE_DIFF service not registered", e);
-            displayError("Service not available");
+            displayResult("Error: Service not available");
         }
     }
-
-    // Result format: "days=<n>|weeks=<n>|months=<n>|years=<n>"
 
     private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            displayError(result.substring("Error:".length()).trim());
-            return;
+            resultArea.setStyle(ERROR_STYLE);
+        } else {
+            resultArea.setStyle(NORMAL_STYLE);
         }
-        Map<String, String> parsed = parseKeyValue(result);
-        setLabel(labelDays,   parsed.getOrDefault("days",   "—"), "#4a90d9", "22px");
-        setLabel(labelWeeks,  parsed.getOrDefault("weeks",  "—"), "#ffffff", "16px");
-        setLabel(labelMonths, parsed.getOrDefault("months", "—"), "#ffffff", "16px");
-        setLabel(labelYears,  parsed.getOrDefault("years",  "—"), "#ffffff", "16px");
-    }
-
-    private void displayError(String message) {
-        setLabel(labelDays,   "Error: " + message, "#ff6b6b", "14px");
-        setLabel(labelWeeks,  "—", "#9e9e9e", "14px");
-        setLabel(labelMonths, "—", "#9e9e9e", "14px");
-        setLabel(labelYears,  "—", "#9e9e9e", "14px");
-    }
-
-    private void setLabel(Label label, String text, String color, String size) {
-        label.setText(text);
-        label.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "; -fx-font-weight: bold;");
-    }
-
-    private Map<String, String> parseKeyValue(String result) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String pair : result.split("\\|")) {
-            String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0].trim(), kv[1].trim());
-        }
-        return map;
+        resultArea.setText(result);
     }
 
     private void showErrorDialog(String title, String message) {

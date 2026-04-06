@@ -4,6 +4,7 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
@@ -44,37 +45,15 @@
 
     <Separator style="-fx-background-color: #404040;"/>
 
-    <GridPane hgap="16" vgap="12">
-        <columnConstraints>
-            <ColumnConstraints minWidth="160"/>
-            <ColumnConstraints hgrow="ALWAYS"/>
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints minHeight="36"/>
-            <RowConstraints minHeight="36"/>
-            <RowConstraints minHeight="36"/>
-            <RowConstraints minHeight="36"/>
-        </rowConstraints>
-
-        <Label text="Total Days" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <Label fx:id="labelDays" text="—" styleClass="result-label"
-               style="-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;"
-               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-
-        <Label text="Total Weeks" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <Label fx:id="labelWeeks" text="—" styleClass="result-label"
-               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
-               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-
-        <Label text="Total Months" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <Label fx:id="labelMonths" text="—" styleClass="result-label"
-               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
-               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-
-        <Label text="Total Years" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Label fx:id="labelYears" text="—" styleClass="result-label"
-               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
-               GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-    </GridPane>
+    <!-- Single result area — displays full service output string directly -->
+    <Label text="Result" style="-fx-text-fill: #9e9e9e; -fx-font-size: 13px;"/>
+    <TextArea fx:id="resultArea"
+              editable="false"
+              wrapText="true"
+              prefHeight="80"
+              styleClass="result-area"
+              style="-fx-control-inner-background: #1a1a1a; -fx-text-fill: #e0e0e0;
+                     -fx-font-size: 14px; -fx-border-color: #404040; -fx-border-width: 1;
+                     -fx-border-radius: 4; -fx-background-radius: 4;"/>
 
 </VBox>

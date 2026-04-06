@@ -23,7 +23,8 @@ import java.util.ResourceBundle;
 /**
  * Controller for unit-converter.fxml.
  * Populates category and unit ComboBoxes in initialize()/onCategoryChange().
- * Delegates conversion to UNIT_CONVERTER service — no conversion math here.
+ * Delegates to UnitConverterService using keys: "value", "fromUnit", "toUnit", "category".
+ * Unit display names are mapped to the service's expected codes before calling calculate().
  */
 public class UnitConverterController implements Initializable {
 
@@ -35,22 +36,34 @@ public class UnitConverterController implements Initializable {
     @FXML private TextField fieldValue;
     @FXML private Label labelResult;
 
-    /** Categories and their corresponding units. */
-    private static final Map<String, List<String>> UNITS = new LinkedHashMap<>(Map.of(
-        "Length",      List.of("Millimeter", "Centimeter", "Meter", "Kilometer", "Inch", "Foot", "Yard", "Mile"),
-        "Weight",      List.of("Milligram", "Gram", "Kilogram", "Tonne", "Ounce", "Pound", "Stone"),
-        "Temperature", List.of("Celsius", "Fahrenheit", "Kelvin"),
-        "Volume",      List.of("Milliliter", "Liter", "Cubic Meter", "Fluid Ounce", "Pint", "Quart", "Gallon"),
-        "Speed",       List.of("m/s", "km/h", "mph", "knot"),
-        "Area",        List.of("sq cm", "sq m", "sq km", "sq in", "sq ft", "sq yd", "Acre", "Hectare")
-    ));
+    /** Categories -> display unit names (shown in ComboBox). */
+    private static final Map<String, List<String>> UNIT_DISPLAY = new LinkedHashMap<>();
+
+    /**
+     * Mapping: display name -> service code (as expected by UnitConverterService).
+     * Keys must match exactly what UnitConverterService uses in its static maps.
+     */
+    private static final Map<String, String> DISPLAY_TO_CODE = new LinkedHashMap<>();
+
+    static {
+        UNIT_DISPLAY.put("Length",      List.of("MM", "CM", "M", "KM", "INCH", "FOOT", "YARD", "MILE"));
+        UNIT_DISPLAY.put("Weight",      List.of("MG", "G", "KG", "TONNE", "LB", "OZ", "STONE"));
+        UNIT_DISPLAY.put("Temperature", List.of("C", "F", "K"));
+        UNIT_DISPLAY.put("Volume",      List.of("ML", "L", "CUBICM", "GALLON", "QUART", "PINT", "FLOZ", "CUBICCM"));
+        UNIT_DISPLAY.put("Speed",       List.of("MPS", "KPH", "MPH", "KNOT", "FPS"));
+        UNIT_DISPLAY.put("Area",        List.of("SQM", "SQKM", "SQFT", "SQMILE", "HECTARE", "ACRE"));
+
+        // For this controller, display codes ARE the service codes — no translation needed.
+        // Codes are passed directly to the service.
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        comboCategory.setItems(FXCollections.observableArrayList(UNITS.keySet()));
+        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.UNIT_CONVERTER);
+        log.debug("UnitConverterController initialized, service={}", svc.getClass().getSimpleName());
+        comboCategory.setItems(FXCollections.observableArrayList(UNIT_DISPLAY.keySet()));
         comboCategory.getSelectionModel().selectFirst();
         updateUnitLists("Length");
-        log.debug("UnitConverterController initialized");
     }
 
     @FXML
@@ -77,45 +90,44 @@ public class UnitConverterController implements Initializable {
             return;
         }
 
+        // category must be uppercase for the service
+        String serviceCategory = category.toUpperCase();
+
         Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("category", category);
-        inputs.put("from",     fromUnit);
-        inputs.put("to",       toUnit);
         inputs.put("value",    value);
+        inputs.put("fromUnit", fromUnit);
+        inputs.put("toUnit",   toUnit);
+        inputs.put("category", serviceCategory);
 
         try {
             CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.UNIT_CONVERTER);
             String result = svc.calculate(inputs);
             log.debug("Unit conversion result: {}", result);
-            displayResult(result, toUnit);
+            displayResult(result);
         } catch (IllegalArgumentException e) {
             log.warn("UNIT_CONVERTER service not registered", e);
-            setErrorLabel("Service not available");
+            displayResult("Error: Service not available");
         }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private void updateUnitLists(String category) {
-        List<String> units = UNITS.getOrDefault(category, List.of());
+        List<String> units = UNIT_DISPLAY.getOrDefault(category, List.of());
         comboFrom.setItems(FXCollections.observableArrayList(units));
         comboTo.setItems(FXCollections.observableArrayList(units));
         comboFrom.getSelectionModel().selectFirst();
-        comboTo.getSelectionModel().select(1);
+        if (units.size() > 1) comboTo.getSelectionModel().select(1);
     }
 
-    private void displayResult(String result, String toUnit) {
+    private void displayResult(String result) {
         if (result.startsWith("Error:")) {
-            setErrorLabel(result.substring("Error:".length()).trim());
+            labelResult.setText(result);
+            labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
         } else {
-            labelResult.setText(result + " " + toUnit);
-            labelResult.setStyle("-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;");
+            labelResult.setText(result);
+            labelResult.setStyle("-fx-text-fill: #4a90d9; -fx-font-size: 18px; -fx-font-weight: bold;");
         }
-    }
-
-    private void setErrorLabel(String message) {
-        labelResult.setText("Error: " + message);
-        labelResult.setStyle("-fx-text-fill: #ff6b6b; -fx-font-size: 14px;");
     }
 
     private void showErrorDialog(String title, String message) {
