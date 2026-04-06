@@ -131,6 +131,176 @@ mvn clean javafx:run@debug
 
 ---
 
+## v1.0.0 — Phases A through D Complete
+
+All 15 calculator types are fully implemented. Core MVC architecture, dark-theme CSS, and FXML-based view routing are in place. See the Development Execution Plan below for the full phase breakdown and Phase F for planned pro features.
+
+---
+
+## Actual Project Structure
+
+The following tree reflects the real files on disk after Phases A through D.
+
+```
+src/
+└── main/
+    ├── java/com/techdeveloper/calculator/
+    │   ├── UniversalCalculatorApp.java              <- JavaFX Application entry; loads main.fxml
+    │   ├── ViewRouter.java                          <- Singleton; swaps FXML into BorderPane.center
+    │   ├── controller/
+    │   │   ├── MainAppController.java               <- All 15 MenuBar onAction handlers
+    │   │   ├── BasicCalculatorController.java
+    │   │   ├── ScientificCalculatorController.java
+    │   │   ├── ProgrammerCalculatorController.java
+    │   │   ├── EMICalculatorController.java
+    │   │   ├── BMICalculatorController.java
+    │   │   ├── AgeCalculatorController.java
+    │   │   ├── DateDiffCalculatorController.java
+    │   │   ├── CurrencyCalculatorController.java
+    │   │   ├── UnitConverterController.java
+    │   │   ├── TipCalculatorController.java
+    │   │   ├── DiscountCalculatorController.java
+    │   │   ├── MatrixCalculatorController.java
+    │   │   ├── StatisticsCalculatorController.java
+    │   │   ├── SpeedCalculatorController.java
+    │   │   └── FuelCalculatorController.java
+    │   └── service/
+    │       ├── CalculatorService.java               <- Interface: calculate(Map<String,String>) -> String
+    │       ├── CalculatorType.java                  <- Enum: 15 type constants
+    │       ├── ServiceFactory.java                  <- Singleton: EnumMap-backed service registry
+    │       ├── BasicCalculatorService.java
+    │       ├── ScientificCalculatorService.java
+    │       ├── ProgrammerCalculatorService.java
+    │       ├── EMICalculatorService.java
+    │       ├── BMICalculatorService.java
+    │       ├── AgeCalculatorService.java
+    │       ├── DateDiffCalculatorService.java
+    │       ├── CurrencyCalculatorService.java
+    │       ├── UnitConverterService.java
+    │       ├── TipCalculatorService.java
+    │       ├── DiscountCalculatorService.java
+    │       ├── MatrixCalculatorService.java
+    │       ├── StatisticsCalculatorService.java
+    │       ├── SpeedCalculatorService.java
+    │       └── FuelCalculatorService.java
+    └── resources/
+        ├── fxml/
+        │   ├── main.fxml                            <- Root layout: BorderPane + MenuBar (5 menus)
+        │   ├── basic-calculator.fxml
+        │   ├── scientific-calculator.fxml
+        │   ├── programmer-calculator.fxml
+        │   ├── emi-calculator.fxml
+        │   ├── bmi-calculator.fxml
+        │   ├── age-calculator.fxml
+        │   ├── date-diff-calculator.fxml
+        │   ├── currency-calculator.fxml
+        │   ├── unit-converter.fxml
+        │   ├── tip-calculator.fxml
+        │   ├── discount-calculator.fxml
+        │   ├── matrix-calculator.fxml
+        │   ├── statistics-calculator.fxml
+        │   ├── speed-calculator.fxml
+        │   └── fuel-calculator.fxml
+        └── css/
+            └── dark-theme.css                       <- Global dark theme design tokens
+```
+
+**Counts:** 16 controller files (MainApp + 15 calculators) | 18 service files (interface + enum + factory + 15 implementations) | 16 FXML files (main + 15 calculators) | 1 CSS file
+
+---
+
+## How to Contribute
+
+### Fork and Clone
+
+```bash
+git clone https://github.com/piyushmakhija28/javafx-universal-calculator.git
+cd javafx-universal-calculator
+git checkout -b feat/my-new-calculator
+```
+
+### Adding a New Calculator Type (4-Step Pattern)
+
+Every calculator in this project follows the same four-file pattern. To add a 16th calculator type, do exactly these four steps in order.
+
+**Step 1 — Add a CalculatorType enum entry**
+
+Open `src/main/java/com/techdeveloper/calculator/service/CalculatorType.java` and add your constant:
+
+```java
+MY_CALCULATOR,
+```
+
+**Step 2 — Create XService.java**
+
+Create `src/main/java/com/techdeveloper/calculator/service/MyCalculatorService.java` implementing `CalculatorService`:
+
+```java
+public class MyCalculatorService implements CalculatorService {
+    @Override
+    public String calculate(Map<String, String> inputs) {
+        // Validate inputs, run computation, return result string.
+        // On any error: return "Error: <reason>" — never throw an exception.
+    }
+}
+```
+
+**Step 3 — Create my-calculator.fxml**
+
+Create `src/main/resources/fxml/my-calculator.fxml` using the dark-theme CSS classes. Apply the stylesheet exactly as every other FXML does:
+
+```xml
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.techdeveloper.calculator.controller.MyCalculatorController"
+            stylesheets="@../css/dark-theme.css">
+    <!-- your layout here -->
+</BorderPane>
+```
+
+**Step 4 — Create XController.java and register in ServiceFactory**
+
+Create `src/main/java/com/techdeveloper/calculator/controller/MyCalculatorController.java`. The controller must only read inputs from the FXML fields, call `ServiceFactory.getInstance().getService(CalculatorType.MY_CALCULATOR).calculate(inputs)`, and display the result. No math logic belongs in the controller.
+
+Then register the service in `ServiceFactory.java`:
+
+```java
+registry.put(CalculatorType.MY_CALCULATOR, new MyCalculatorService());
+```
+
+Finally, add a menu item in `main.fxml` and wire its `onAction` handler in `MainAppController.java`.
+
+### PR Checklist
+
+Before submitting a Pull Request, verify all of the following:
+
+- [ ] Service returns `"Error: <message>"` on every failure path — it never throws an exception to the controller
+- [ ] Controller contains zero math or business logic — all computation is delegated to the service
+- [ ] FXML uses dark-theme CSS classes and references `@../css/dark-theme.css` in its stylesheets attribute
+- [ ] `CalculatorType` enum has the new constant
+- [ ] `ServiceFactory` registers the new service against the new enum constant
+- [ ] `MainAppController` has the `onAction` handler for the new menu item
+- [ ] New FXML file is placed under `src/main/resources/fxml/`
+- [ ] Application compiles and runs with `mvn clean javafx:run` without errors
+
+---
+
+## Known Limitations
+
+The following are intentional constraints or deferred features in v1.0.0.
+
+| Area | Limitation | Planned Resolution |
+|---|---|---|
+| Currency rates | Exchange rates are hardcoded static values — not fetched live | Phase F.2: real-time currency API integration |
+| Programmer calculator | All arithmetic uses integer math; floating-point values are truncated by design | No change planned — programmer mode is integer-only by convention |
+| Matrix calculator | Supports 2x2 and 3x3 matrices only; larger sizes are not supported | Phase F: matrix size selector if demand exists |
+| Calculation history | No persistent history is stored between sessions | Phase F.1: SQLite-backed history panel |
+| Java version | Requires Java 25 and JavaFX 25; older JDK versions are not supported and will not work | No backport planned — Java 25 is the baseline |
+
+**Currency note:** the `CurrencyCalculatorService` ships with a representative set of static exchange rates as of the implementation date. For accurate conversions, use an authoritative source until Phase F.2 live-rate integration is available.
+
+---
+
 ## 📋 Development Execution Plan
 
 The project is built across **5 phases** using a multi-agent orchestration system.
