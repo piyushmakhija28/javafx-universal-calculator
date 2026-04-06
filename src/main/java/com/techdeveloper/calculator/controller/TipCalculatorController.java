@@ -10,8 +10,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
@@ -42,16 +40,13 @@ public class TipCalculatorController implements Initializable {
     @FXML private TextField fieldBill;
     @FXML private Slider sliderTip;
     @FXML private Label labelTipPercent;
-    @FXML private Spinner<Integer> spinnerSplit;
+    @FXML private TextField spinnerSplit;
     @FXML private TextArea resultArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.TIP);
         log.debug("TipCalculatorController initialized, service={}", svc.getClass().getSimpleName());
-
-        // Wire spinner value factory
-        spinnerSplit.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 1));
 
         // Bind slider to the percentage label
         sliderTip.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -69,7 +64,8 @@ public class TipCalculatorController implements Initializable {
         }
 
         int tipPercent = (int) sliderTip.getValue();
-        int splitCount = spinnerSplit.getValue();
+        String splitText = spinnerSplit.getText().trim();
+        int splitCount = splitText.isEmpty() ? 1 : Integer.parseInt(splitText);
 
         Map<String, String> inputs = new LinkedHashMap<>();
         inputs.put("billAmount", bill);
