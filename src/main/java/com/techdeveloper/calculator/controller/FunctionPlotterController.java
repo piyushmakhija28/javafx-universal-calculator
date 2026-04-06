@@ -66,7 +66,7 @@ public class FunctionPlotterController implements Initializable {
     @FXML private Button    btnClear;
 
     // ── Service ──────────────────────────────────────────────────────────────
-    private final PlotterService plotterService = new PlotterService();
+    private final PlotterService plotterService = PlotterService.newInstance();
 
     // ── State ────────────────────────────────────────────────────────────────
     /** Currently running plot task — cancelled before starting a new one. */

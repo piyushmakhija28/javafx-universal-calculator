@@ -1,9 +1,11 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.constants.SolveFor;
+import com.techdeveloper.calculator.dto.SpeedCalculatorResult;
+import com.techdeveloper.calculator.form.SpeedCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,15 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for speed-calculator.fxml.
  * "Solve For" ComboBox tells the service which variable to compute.
- * Service input key is "solve" (SPEED / DISTANCE / TIME), plus "speed", "distance", "time".
+ * Service form: SpeedCalculatorForm(solve, speed, distance, time).
  * Result displayed directly in labelResult — no pipe-parsing.
  */
 public class SpeedCalculatorController implements Initializable {
@@ -41,10 +41,12 @@ public class SpeedCalculatorController implements Initializable {
     @FXML private TextField fieldTime;
     @FXML private Label labelResult;
 
+    private CalculatorService<SpeedCalculatorForm, SpeedCalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SPEED);
-        log.debug("SpeedCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getSpeedService();
+        log.debug("SpeedCalculatorController initialized, service={}", service.getClass().getSimpleName());
         comboSolveFor.setItems(FXCollections.observableArrayList(
                 List.of("Speed", "Distance", "Time")));
         comboSolveFor.getSelectionModel().selectFirst();
@@ -53,34 +55,41 @@ public class SpeedCalculatorController implements Initializable {
     @FXML
     private void onCalculate(ActionEvent event) {
         String solveForDisplay = comboSolveFor.getValue();
-        String speed    = fieldSpeed.getText().trim();
-        String distance = fieldDistance.getText().trim();
-        String time     = fieldTime.getText().trim();
-
-        // Map display selection to service token (uppercase)
-        String solveToken = solveForDisplay != null ? solveForDisplay.toUpperCase() : "SPEED";
-
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("solve",    solveToken);
-        inputs.put("speed",    speed);
-        inputs.put("distance", distance);
-        inputs.put("time",     time);
+        String speedText    = fieldSpeed.getText().trim();
+        String distanceText = fieldDistance.getText().trim();
+        String timeText     = fieldTime.getText().trim();
 
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SPEED);
-            String result = svc.calculate(inputs);
-            log.debug("Speed result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = "Solve=" + solveToken
-                        + (!speed.isEmpty()    ? ", S=" + speed    : "")
-                        + (!distance.isEmpty() ? ", D=" + distance : "")
-                        + (!time.isEmpty()     ? ", T=" + time     : "");
-                HistoryService.getInstance().addEntry("Speed", inputSummary, result);
+            // Map display selection to SolveFor enum
+            SolveFor solveFor = SolveFor.valueOf(
+                solveForDisplay != null ? solveForDisplay.toUpperCase() : "SPEED");
+
+            Double speed    = speedText.isEmpty()    ? null : Double.parseDouble(speedText);
+            Double distance = distanceText.isEmpty() ? null : Double.parseDouble(distanceText);
+            Double time     = timeText.isEmpty()     ? null : Double.parseDouble(timeText);
+
+            SpeedCalculatorForm form = new SpeedCalculatorForm(solveFor, speed, distance, time);
+            SpeedCalculatorResult result = service.calculate(form);
+            log.debug("Speed result: isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage());
+            } else {
+                String formatted = String.format("%s = %.4f",
+                    result.solvedVariable().name(), result.value());
+                displayResult(formatted);
+                String inputSummary = "Solve=" + solveFor
+                        + (!speedText.isEmpty()    ? ", S=" + speedText    : "")
+                        + (!distanceText.isEmpty() ? ", D=" + distanceText : "")
+                        + (!timeText.isEmpty()     ? ", T=" + timeText     : "");
+                HistoryService.getInstance().addEntry("Speed", inputSummary, formatted);
             }
+        } catch (NumberFormatException e) {
+            log.warn("Speed controller: invalid number input", e);
+            displayResult("Error: Invalid numeric input");
         } catch (IllegalArgumentException e) {
-            log.warn("SPEED service not registered", e);
-            displayResult("Error: Service not available");
+            log.warn("Speed controller: unknown solve-for value={}", solveForDisplay, e);
+            displayResult("Error: Unknown solve-for value");
         }
     }
 

@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.BasicCalculatorResult;
+import com.techdeveloper.calculator.form.BasicCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -13,8 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -35,6 +34,8 @@ public class BasicCalculatorController implements Initializable {
 
     @FXML private TextField display;
 
+    private CalculatorService<BasicCalculatorForm, BasicCalculatorResult> service;
+
     /** Current operand being typed. */
     private String currentInput = "0";
     /** Pending operand (left side of binary operation). */
@@ -46,8 +47,8 @@ public class BasicCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
-        log.debug("BasicCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getBasicService();
+        log.debug("BasicCalculatorController initialized, service={}", service.getClass().getSimpleName());
         display.setText("0");
     }
 
@@ -134,12 +135,7 @@ public class BasicCalculatorController implements Initializable {
 
     @FXML
     private void onPercent(ActionEvent event) {
-        // Percent: currentInput / 100
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operand1", currentInput);
-        inputs.put("operator", "/");
-        inputs.put("operand2", "100");
-        String result = callService(inputs);
+        String result = callService(currentInput, "/", "100");
         if (!result.startsWith("Error:")) {
             currentInput = result;
             display.setStyle(NORMAL_STYLE);
@@ -151,10 +147,7 @@ public class BasicCalculatorController implements Initializable {
 
     @FXML
     private void onNegate(ActionEvent event) {
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operand1", currentInput);
-        inputs.put("operator", "+-");
-        String result = callService(inputs);
+        String result = callService(currentInput, "+-", null);
         if (!result.startsWith("Error:")) {
             currentInput = result;
             display.setStyle(NORMAL_STYLE);
@@ -166,10 +159,7 @@ public class BasicCalculatorController implements Initializable {
 
     @FXML
     private void onSqrt(ActionEvent event) {
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operand1", currentInput);
-        inputs.put("operator", "sqrt");
-        String result = callService(inputs);
+        String result = callService(currentInput, "sqrt", null);
         if (!result.startsWith("Error:")) {
             currentInput = result;
             display.setStyle(NORMAL_STYLE);
@@ -183,8 +173,8 @@ public class BasicCalculatorController implements Initializable {
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /**
-     * Build the correct input map for BasicCalculatorService and call it.
-     * Service expects: "operand1", "operator", "operand2" (for binary ops).
+     * Build the correct typed form for BasicCalculatorService and call it.
+     * Service expects: operand1, operator, operand2 (operand2 may be null for unary ops).
      */
     private String evaluate(String left, String operator, String right) {
         // Normalise display symbols to service tokens
@@ -193,23 +183,19 @@ public class BasicCalculatorController implements Initializable {
             case "−", "-"  -> "-";
             case "×", "*"  -> "*";
             case "÷", "/"  -> "/";
-            default       -> operator;
+            default        -> operator;
         };
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operand1", left);
-        inputs.put("operator", opToken);
-        inputs.put("operand2", right);
-        return callService(inputs);
+        return callService(left, opToken, right);
     }
 
-    private String callService(Map<String, String> inputs) {
-        try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
-            return svc.calculate(inputs);
-        } catch (IllegalArgumentException e) {
-            log.warn("Service not registered for type=BASIC", e);
-            return "Error: Service not available";
+    private String callService(String operand1, String operator, String operand2) {
+        BasicCalculatorForm form = new BasicCalculatorForm(operand1, operator, operand2);
+        BasicCalculatorResult result = service.calculate(form);
+        if (result.isError()) {
+            log.warn("BasicCalculator service error: {}", result.errorMessage());
+            return "Error: " + result.errorMessage();
         }
+        return result.formattedResult();
     }
 
     private void showInlineError(String errorMessage) {

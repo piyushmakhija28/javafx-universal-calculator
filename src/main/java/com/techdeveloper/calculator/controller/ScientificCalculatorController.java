@@ -1,9 +1,13 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.constants.AngleMode;
+import com.techdeveloper.calculator.dto.BasicCalculatorResult;
+import com.techdeveloper.calculator.dto.ScientificCalculatorResult;
+import com.techdeveloper.calculator.form.BasicCalculatorForm;
+import com.techdeveloper.calculator.form.ScientificCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -20,14 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for scientific-calculator.fxml.
  * Handles DEG/RAD toggle, scientific function buttons, and basic arithmetic.
- * Delegates to ScientificCalculatorService using keys: "value", "operation", "mode".
+ * Delegates to ScientificCalculatorService using ScientificCalculatorForm.
  */
 public class ScientificCalculatorController implements Initializable {
 
@@ -40,7 +43,7 @@ public class ScientificCalculatorController implements Initializable {
     private static final String NORMAL_STYLE = "-fx-text-fill: #e0e0e0;";
     private static final String ERROR_STYLE  = "-fx-text-fill: #ff6b6b;";
 
-    /** Maps FXML button display text → service operation token. */
+    /** Maps FXML button display text to service operation token. */
     private static final Map<String, String> BUTTON_TO_OP = Map.of(
         "x²",  "square",
         "x^y", "power",
@@ -56,6 +59,9 @@ public class ScientificCalculatorController implements Initializable {
     @FXML private ToggleButton btnRad;
     @FXML private Button btnPlotter;
 
+    private CalculatorService<ScientificCalculatorForm, ScientificCalculatorResult> service;
+    private CalculatorService<BasicCalculatorForm, BasicCalculatorResult> basicService;
+
     private String currentInput = "0";
     private String pendingOperand = "";
     private String pendingOperator = "";
@@ -64,8 +70,9 @@ public class ScientificCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SCIENTIFIC);
-        log.debug("ScientificCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getScientificService();
+        basicService = ServiceFactory.getInstance().getBasicService();
+        log.debug("ScientificCalculatorController initialized, service={}", service.getClass().getSimpleName());
         display.setText("0");
     }
 
@@ -138,19 +145,13 @@ public class ScientificCalculatorController implements Initializable {
     }
 
     // ── Scientific functions ───────────────────────────────────────────────
-    // Button text must match the operation name understood by ScientificCalculatorService:
-    // sin, cos, tan, asin, acos, atan, log, ln, sqrt, square, cube, factorial
 
     @FXML
     private void onScientific(ActionEvent event) {
         String btnText = ((Button) event.getSource()).getText().trim();
         String func = BUTTON_TO_OP.getOrDefault(btnText, btnText.toLowerCase());
         String valueSnapshot = currentInput;
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",     valueSnapshot);
-        inputs.put("operation", func);
-        inputs.put("mode",      isRadians ? "RAD" : "DEG");
-        String result = callService(inputs);
+        String result = callService(valueSnapshot, func);
         applyResult(result);
         if (!result.startsWith("Error:")) {
             String inputSummary = func + "(" + valueSnapshot + ")";
@@ -162,10 +163,8 @@ public class ScientificCalculatorController implements Initializable {
     @FXML
     private void onConstant(ActionEvent event) {
         String constant = ((Button) event.getSource()).getText().toLowerCase().trim();
-        // "pi" and "e" are handled by the service without a value input
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operation", constant);
-        String result = callService(inputs);
+        // "pi" and "e" are handled by the service with an empty value
+        String result = callService("", constant);
         if (!result.startsWith("Error:")) {
             currentInput = result;
             display.setStyle(NORMAL_STYLE);
@@ -184,8 +183,6 @@ public class ScientificCalculatorController implements Initializable {
                 getClass().getResource("/fxml/function-plotter.fxml"));
             Parent root = loader.load();
             Scene plotterScene = new Scene(root);
-            // Apply the same dark theme stylesheet — the plotter opens in its own Stage
-            // which does not inherit the parent Scene's stylesheets.
             URL cssUrl = getClass().getResource("/css/dark-theme.css");
             if (cssUrl != null) {
                 plotterScene.getStylesheets().add(cssUrl.toExternalForm());
@@ -228,8 +225,7 @@ public class ScientificCalculatorController implements Initializable {
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /**
-     * For basic binary arithmetic (+, -, *, /) the scientific service does not directly
-     * expose a binary op — delegate those to the BASIC service via the proper keys.
+     * For basic binary arithmetic (+, -, *, /) delegate to BasicCalculatorService.
      */
     private String evaluateBinary(String left, String operator, String right) {
         String opToken = switch (operator) {
@@ -237,19 +233,15 @@ public class ScientificCalculatorController implements Initializable {
             case "−", "-"  -> "-";
             case "×", "*"  -> "*";
             case "÷", "/"  -> "/";
-            default       -> operator;
+            default        -> operator;
         };
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("operand1", left);
-        inputs.put("operator", opToken);
-        inputs.put("operand2", right);
-        try {
-            CalculatorService basic = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
-            return basic.calculate(inputs);
-        } catch (IllegalArgumentException e) {
-            log.warn("BASIC service not registered for binary eval in Scientific controller", e);
-            return "Error: Service not available";
+        BasicCalculatorForm form = new BasicCalculatorForm(left, opToken, right);
+        BasicCalculatorResult result = basicService.calculate(form);
+        if (result.isError()) {
+            log.warn("BASIC service error in Scientific evaluateBinary: {}", result.errorMessage());
+            return "Error: " + result.errorMessage();
         }
+        return result.formattedResult();
     }
 
     private void applyResult(String result) {
@@ -269,14 +261,15 @@ public class ScientificCalculatorController implements Initializable {
         resultJustShown = false;
     }
 
-    private String callService(Map<String, String> inputs) {
-        try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.SCIENTIFIC);
-            return svc.calculate(inputs);
-        } catch (IllegalArgumentException e) {
-            log.warn("SCIENTIFIC service not registered", e);
-            return "Error: Service not available";
+    private String callService(String value, String operation) {
+        AngleMode mode = isRadians ? AngleMode.RAD : AngleMode.DEG;
+        ScientificCalculatorForm form = new ScientificCalculatorForm(value, operation, mode);
+        ScientificCalculatorResult result = service.calculate(form);
+        if (result.isError()) {
+            log.warn("SCIENTIFIC service error: {}", result.errorMessage());
+            return "Error: " + result.errorMessage();
         }
+        return result.formattedResult();
     }
 
     private void showInlineError(String errorMessage) {

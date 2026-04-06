@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.DateDiffCalculatorResult;
+import com.techdeveloper.calculator.form.DateDiffCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,14 +16,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for date-diff-calculator.fxml.
  * Reads start and end dates and delegates difference computation to DateDiffCalculatorService.
- * Service inputs: "startDate" (YYYY-MM-DD), "endDate" (YYYY-MM-DD).
+ * Service form: DateDiffCalculatorForm(startDate, endDate).
  * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class DateDiffCalculatorController implements Initializable {
@@ -40,10 +39,12 @@ public class DateDiffCalculatorController implements Initializable {
     @FXML private DatePicker pickerEnd;
     @FXML private TextArea   resultArea;
 
+    private CalculatorService<DateDiffCalculatorForm, DateDiffCalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DATE_DIFF);
-        log.debug("DateDiffCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getDateDiffService();
+        log.debug("DateDiffCalculatorController initialized, service={}", service.getClass().getSimpleName());
     }
 
     @FXML
@@ -63,32 +64,25 @@ public class DateDiffCalculatorController implements Initializable {
             end = temp;
         }
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("startDate", start.toString());
-        inputs.put("endDate",   end.toString());
+        DateDiffCalculatorForm form = new DateDiffCalculatorForm(start, end);
+        DateDiffCalculatorResult result = service.calculate(form);
+        log.debug("DateDiff result: isError={}", result.isError());
 
-        try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.DATE_DIFF);
-            String result = svc.calculate(inputs);
-            log.debug("DateDiff result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = start + " to " + end;
-                HistoryService.getInstance().addEntry("Date Diff", inputSummary, result);
-            }
-        } catch (IllegalArgumentException e) {
-            log.warn("DATE_DIFF service not registered", e);
-            displayResult("Error: Service not available");
+        if (result.isError()) {
+            displayResult("Error: " + result.errorMessage(), true);
+        } else {
+            String formatted = String.format(
+                "Total Days: %d%n%d years, %d months, %d days",
+                result.totalDays(), result.years(), result.months(), result.days());
+            displayResult(formatted, false);
+            String inputSummary = start + " to " + end;
+            HistoryService.getInstance().addEntry("Date Diff", inputSummary, formatted);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+    private void displayResult(String text, boolean isError) {
+        resultArea.setStyle(isError ? ERROR_STYLE : NORMAL_STYLE);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

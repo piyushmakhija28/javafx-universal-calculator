@@ -1,10 +1,11 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.CurrencyCalculatorResult;
+import com.techdeveloper.calculator.form.CurrencyCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.LiveCurrencyService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -19,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -34,11 +34,8 @@ import java.util.ResourceBundle;
  * <p>Conversion logic:
  * <ul>
  *   <li>If live rates are available: {@code convertedAmount = amount * ratesTo / ratesFrom}
- *   <li>Fallback: delegates to {@link com.techdeveloper.calculator.service.CurrencyCalculatorService}
+ *   <li>Fallback: delegates to CurrencyCalculatorService using CurrencyCalculatorForm
  * </ul>
- *
- * <p>Service inputs when delegating to the static service:
- * "amount", "fromCurrency" (3-letter code), "toCurrency" (3-letter code).
  */
 public class CurrencyCalculatorController implements Initializable {
 
@@ -53,6 +50,8 @@ public class CurrencyCalculatorController implements Initializable {
     @FXML private ComboBox<String> comboTo;
     @FXML private Label       labelResult;
     @FXML private Label       labelRateStatus;
+
+    private CalculatorService<CurrencyCalculatorForm, CurrencyCalculatorResult> service;
 
     /**
      * Holds live rates fetched from the network.
@@ -86,6 +85,7 @@ public class CurrencyCalculatorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        service = ServiceFactory.getInstance().getCurrencyService();
         comboFrom.setItems(FXCollections.observableArrayList(CURRENCIES));
         comboTo.setItems(FXCollections.observableArrayList(CURRENCIES));
         comboFrom.getSelectionModel().select(0); // USD
@@ -181,23 +181,25 @@ public class CurrencyCalculatorController implements Initializable {
     }
 
     private void convertWithStaticRates(String amountText, String fromCode, String toCode) {
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("amount",       amountText);
-        inputs.put("fromCurrency", fromCode);
-        inputs.put("toCurrency",   toCode);
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.CURRENCY);
-            String result = svc.calculate(inputs);
-            log.debug("CurrencyCalculatorController: static conversion result — {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
+            double amount = Double.parseDouble(amountText);
+            CurrencyCalculatorForm form = new CurrencyCalculatorForm(amount, fromCode, toCode);
+            CurrencyCalculatorResult result = service.calculate(form);
+            log.debug("CurrencyCalculatorController: static conversion isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage());
+            } else {
+                String formatted = String.format("%.2f %s = %.2f %s (Rate: 1 %s = %.4f %s)",
+                    amount, result.fromCode(), result.convertedAmount(), result.toCode(),
+                    result.fromCode(), result.rate(), result.toCode());
+                displayResult(formatted);
                 String inputSummary = amountText + " " + fromCode + " -> " + toCode;
-                HistoryService.getInstance().addEntry("Currency", inputSummary, result);
+                HistoryService.getInstance().addEntry("Currency", inputSummary, formatted);
             }
-        } catch (IllegalArgumentException e) {
-            log.warn("CurrencyCalculatorController: CURRENCY service not registered", e);
-            displayResult("Error: Service not available");
+        } catch (NumberFormatException e) {
+            log.warn("CurrencyCalculatorController: invalid amount input", e);
+            displayResult("Error: Invalid number format for amount");
         }
     }
 

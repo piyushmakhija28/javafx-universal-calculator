@@ -1,21 +1,17 @@
 package com.techdeveloper.calculator.service;
 
-import java.util.Map;
-
 /**
- * Universal interface for all calculator service implementations.
- * Every calculator type implements this interface.
- * The calculate() method accepts named inputs and returns a formatted result string.
- * On any error (divide-by-zero, empty input, invalid format), returns "Error: <message>"
- * and NEVER throws an exception to the calling Controller.
+ * Generic typed interface for all calculator service implementations.
+ * F — the form (input record) type.
+ * R — the result (DTO) type.
  */
-public interface CalculatorService {
+public interface CalculatorService<F, R> {
 
     /**
-     * Perform the calculation based on the given named inputs.
+     * Perform the calculation based on the given typed form.
      *
-     * @param inputs Map of input field name to string value (e.g., "principal" to "10000")
-     * @return Formatted result string, or "Error: <specific reason>" on failure
+     * @param form the typed input record carrying all required fields
+     * @return typed result DTO; call result.isError() to check for failures
      */
-    String calculate(Map<String, String> inputs);
+    R calculate(F form);
 }

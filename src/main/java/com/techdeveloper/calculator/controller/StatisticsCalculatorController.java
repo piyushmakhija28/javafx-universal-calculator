@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.StatisticsCalculatorResult;
+import com.techdeveloper.calculator.form.StatisticsCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -15,8 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 
 /**
@@ -24,8 +24,7 @@ import java.util.ResourceBundle;
  * Statistics on large data sets run on a background Task.
  * Platform.runLater() is used to update the resultArea TextArea after completion.
  *
- * Service input: "data" — comma-separated numbers.
- * Service returns a pipe-delimited result string; displayed directly in resultArea.
+ * Service form: StatisticsCalculatorForm(data) — double[] parsed from comma-separated input.
  */
 public class StatisticsCalculatorController implements Initializable {
 
@@ -41,13 +40,15 @@ public class StatisticsCalculatorController implements Initializable {
     @FXML private TextArea inputArea;
     @FXML private TextArea resultArea;
 
+    private CalculatorService<StatisticsCalculatorForm, StatisticsCalculatorResult> service;
+
     /** Cancellable reference to the in-flight computation task. */
-    private Task<String> currentTask;
+    private Task<StatisticsCalculatorResult> currentTask;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.STATISTICS);
-        log.debug("StatisticsCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getStatisticsService();
+        log.debug("StatisticsCalculatorController initialized, service={}", service.getClass().getSimpleName());
     }
 
     @FXML
@@ -66,29 +67,50 @@ public class StatisticsCalculatorController implements Initializable {
         resultArea.setStyle(NORMAL_STYLE);
         resultArea.setText("Computing...");
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("data", rawInput);
+        // Parse the comma-separated input into a double array here — fail fast before Task launch
+        final double[] data;
+        try {
+            String[] tokens = rawInput.split(",");
+            data = new double[tokens.length];
+            for (int i = 0; i < tokens.length; i++) {
+                data[i] = Double.parseDouble(tokens[i].trim());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Statistics controller: invalid number in input", e);
+            resultArea.setStyle(ERROR_STYLE);
+            resultArea.setText("Error: Invalid number in input");
+            return;
+        }
 
         currentTask = new Task<>() {
             @Override
-            protected String call() {
-                CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.STATISTICS);
-                return svc.calculate(inputs);
+            protected StatisticsCalculatorResult call() {
+                StatisticsCalculatorForm form = new StatisticsCalculatorForm(data);
+                return service.calculate(form);
             }
         };
 
         final String inputSnapshot = rawInput;
         currentTask.setOnSucceeded(workerState -> {
-            String result = currentTask.getValue();
-            // Platform.runLater() — mandatory for UI mutations including HistoryService.addEntry().
+            StatisticsCalculatorResult result = currentTask.getValue();
+            // Platform.runLater() — mandatory for any UI mutation from a non-FX thread.
+            // resultArea is a UI node and must be updated on the FX Application Thread.
             Platform.runLater(() -> {
-                displayResult(result);
-                if (!result.startsWith("Error:")) {
+                if (result.isError()) {
+                    resultArea.setStyle(ERROR_STYLE);
+                    resultArea.setText("Error: " + result.errorMessage());
+                } else {
+                    String formatted = String.format(
+                        "Count: %d%nSum: %.4f%nMean: %.4f%nMedian: %.4f%nStd Dev: %.4f%nMin: %.4f%nMax: %.4f",
+                        result.count(), result.sum(), result.mean(),
+                        result.median(), result.stdDev(), result.min(), result.max());
+                    resultArea.setStyle(NORMAL_STYLE);
+                    resultArea.setText(formatted);
                     // Truncate long input arrays to keep history readable
                     String truncated = inputSnapshot.length() > 40
                             ? inputSnapshot.substring(0, 37) + "..."
                             : inputSnapshot;
-                    HistoryService.getInstance().addEntry("Statistics", truncated, result);
+                    HistoryService.getInstance().addEntry("Statistics", truncated, formatted);
                 }
             });
         });
@@ -107,17 +129,7 @@ public class StatisticsCalculatorController implements Initializable {
         Thread taskThread = new Thread(currentTask, "statistics-calc-thread");
         taskThread.setDaemon(true);
         taskThread.start();
-        log.debug("Statistics task started for {} chars of input", rawInput.length());
-    }
-
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-            log.warn("Statistics service returned error: {}", result);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+        log.debug("Statistics task started for {} data points", data.length);
     }
 
     private void showErrorDialog(String title, String message) {

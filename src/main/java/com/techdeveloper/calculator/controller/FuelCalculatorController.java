@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.FuelCalculatorResult;
+import com.techdeveloper.calculator.form.FuelCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -14,16 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for fuel-calculator.fxml.
- * Collects distance, fuelUsed, and fuelPrice (optional); delegates to FUEL service.
- *
- * Service input keys: "distance", "fuelUsed", "fuelPrice" (optional).
- * Service returns: "L/100km: X | km/L: Y" or "L/100km: X | km/L: Y | Cost/km: Z | Total Cost: W"
+ * Collects distance, fuelUsed, and fuelPrice (optional); delegates to FuelCalculatorService.
+ * Service form: FuelCalculatorForm(distance, fuelUsed, fuelPrice).
  * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class FuelCalculatorController implements Initializable {
@@ -42,55 +39,67 @@ public class FuelCalculatorController implements Initializable {
     @FXML private TextField fieldFuelPrice;
     @FXML private TextArea  resultArea;
 
+    private CalculatorService<FuelCalculatorForm, FuelCalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.FUEL);
-        log.debug("FuelCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getFuelService();
+        log.debug("FuelCalculatorController initialized, service={}", service.getClass().getSimpleName());
     }
 
     @FXML
     private void onCalculate(ActionEvent event) {
-        String distance  = fieldDistance.getText().trim();
-        String fuelUsed  = fieldFuelUsed.getText().trim();
-        String fuelPrice = fieldFuelPrice.getText().trim();
+        String distanceText  = fieldDistance.getText().trim();
+        String fuelUsedText  = fieldFuelUsed.getText().trim();
+        String fuelPriceText = fieldFuelPrice.getText().trim();
 
-        if (distance.isEmpty() || fuelUsed.isEmpty()) {
+        if (distanceText.isEmpty() || fuelUsedText.isEmpty()) {
             showErrorDialog("Missing Input", "Please enter at least Distance and Fuel Used.");
             return;
         }
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("distance", distance);
-        inputs.put("fuelUsed", fuelUsed);
-        // Only pass fuelPrice when user supplied a value — service treats absence as "no cost calc"
-        if (!fuelPrice.isEmpty()) {
-            inputs.put("fuelPrice", fuelPrice);
-        }
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.FUEL);
-            String result = svc.calculate(inputs);
-            log.debug("Fuel result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = "Dist=" + distance + ", Fuel=" + fuelUsed
-                        + (fuelPrice.isEmpty() ? "" : ", Price=" + fuelPrice);
-                HistoryService.getInstance().addEntry("Fuel", inputSummary, result);
+            double distance  = Double.parseDouble(distanceText);
+            double fuelUsed  = Double.parseDouble(fuelUsedText);
+            // Only pass fuelPrice when user supplied a value — null means no cost calc
+            Double fuelPrice = fuelPriceText.isEmpty() ? null : Double.parseDouble(fuelPriceText);
+
+            FuelCalculatorForm form = new FuelCalculatorForm(distance, fuelUsed, fuelPrice);
+            FuelCalculatorResult result = service.calculate(form);
+            log.debug("Fuel result: isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage(), true);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("L/100km: %.2f%n", result.per100km()));
+                sb.append(String.format("km/L: %.2f", result.kmPerLiter()));
+                if (result.costPerKm() != null) {
+                    sb.append(String.format("%nCost/km: %.2f", result.costPerKm()));
+                }
+                if (result.totalCost() != null) {
+                    sb.append(String.format("%nTotal Cost: %.2f", result.totalCost()));
+                }
+                String formatted = sb.toString();
+                displayResult(formatted, false);
+                String inputSummary = "Dist=" + distanceText + ", Fuel=" + fuelUsedText
+                        + (fuelPriceText.isEmpty() ? "" : ", Price=" + fuelPriceText);
+                HistoryService.getInstance().addEntry("Fuel", inputSummary, formatted);
             }
-        } catch (IllegalArgumentException e) {
-            log.warn("FUEL service not registered", e);
-            displayResult("Error: Service not available");
+        } catch (NumberFormatException e) {
+            log.warn("Fuel controller: invalid number input", e);
+            displayResult("Error: Invalid numeric input", true);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
+    private void displayResult(String text, boolean isError) {
+        if (isError) {
             resultArea.setStyle(ERROR_STYLE);
-            log.warn("Fuel service returned error: {}", result);
+            log.warn("Fuel service returned error: {}", text);
         } else {
             resultArea.setStyle(NORMAL_STYLE);
         }
-        resultArea.setText(result);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

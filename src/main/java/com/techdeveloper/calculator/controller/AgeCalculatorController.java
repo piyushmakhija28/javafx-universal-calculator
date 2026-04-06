@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.AgeCalculatorResult;
+import com.techdeveloper.calculator.form.AgeCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,14 +16,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for age-calculator.fxml.
  * Reads DOB and target date (defaults to today) from DatePickers and delegates to service.
- * Service inputs: "birthDate" (YYYY-MM-DD), "toDate" (YYYY-MM-DD, optional).
+ * Service form: AgeCalculatorForm(birthDate, toDate).
  * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class AgeCalculatorController implements Initializable {
@@ -40,10 +39,12 @@ public class AgeCalculatorController implements Initializable {
     @FXML private DatePicker pickerTarget;
     @FXML private TextArea   resultArea;
 
+    private CalculatorService<AgeCalculatorForm, AgeCalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.AGE);
-        log.debug("AgeCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getAgeService();
+        log.debug("AgeCalculatorController initialized, service={}", service.getClass().getSimpleName());
         // Pre-populate target date with today
         if (pickerTarget != null) pickerTarget.setValue(LocalDate.now());
     }
@@ -64,32 +65,24 @@ public class AgeCalculatorController implements Initializable {
             return;
         }
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("birthDate", dob.toString());
-        inputs.put("toDate",    target.toString());
+        AgeCalculatorForm form = new AgeCalculatorForm(dob, target);
+        AgeCalculatorResult result = service.calculate(form);
+        log.debug("Age result: isError={}", result.isError());
 
-        try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.AGE);
-            String result = svc.calculate(inputs);
-            log.debug("Age result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = "DOB=" + dob + ", To=" + target;
-                HistoryService.getInstance().addEntry("Age", inputSummary, result);
-            }
-        } catch (IllegalArgumentException e) {
-            log.warn("AGE service not registered", e);
-            displayResult("Error: Service not available");
+        if (result.isError()) {
+            displayResult("Error: " + result.errorMessage(), true);
+        } else {
+            String formatted = String.format("%d years, %d months, %d days",
+                result.years(), result.months(), result.days());
+            displayResult(formatted, false);
+            String inputSummary = "DOB=" + dob + ", To=" + target;
+            HistoryService.getInstance().addEntry("Age", inputSummary, formatted);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+    private void displayResult(String text, boolean isError) {
+        resultArea.setStyle(isError ? ERROR_STYLE : NORMAL_STYLE);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

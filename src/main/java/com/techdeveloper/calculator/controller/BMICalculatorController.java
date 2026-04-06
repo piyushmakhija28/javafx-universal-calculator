@@ -1,9 +1,11 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.constants.BMIUnit;
+import com.techdeveloper.calculator.dto.BMICalculatorResult;
+import com.techdeveloper.calculator.form.BMICalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -16,14 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for bmi-calculator.fxml.
  * Handles Metric/Imperial toggle and delegates BMI calculation to BMICalculatorService.
- * Service inputs: "weight", "height", "unit" (METRIC or IMPERIAL).
+ * Service form: BMICalculatorForm(weight, height, BMIUnit).
  * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class BMICalculatorController implements Initializable {
@@ -45,10 +45,12 @@ public class BMICalculatorController implements Initializable {
     @FXML private Label labelHeight;
     @FXML private TextArea resultArea;
 
+    private CalculatorService<BMICalculatorForm, BMICalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BMI);
-        log.debug("BMICalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getBmiService();
+        log.debug("BMICalculatorController initialized, service={}", service.getClass().getSimpleName());
     }
 
     @FXML
@@ -62,42 +64,40 @@ public class BMICalculatorController implements Initializable {
 
     @FXML
     private void onCalculate(ActionEvent event) {
-        String weight = fieldWeight.getText().trim();
-        String height = fieldHeight.getText().trim();
+        String weightText = fieldWeight.getText().trim();
+        String heightText = fieldHeight.getText().trim();
 
-        if (weight.isEmpty() || height.isEmpty()) {
+        if (weightText.isEmpty() || heightText.isEmpty()) {
             showErrorDialog("Missing Input", "Please enter both weight and height.");
             return;
         }
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("weight", weight);
-        inputs.put("height", height);
-        inputs.put("unit",   (rbMetric == null || rbMetric.isSelected()) ? "METRIC" : "IMPERIAL");
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.BMI);
-            String result = svc.calculate(inputs);
-            log.debug("BMI result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String unit = (rbMetric == null || rbMetric.isSelected()) ? "METRIC" : "IMPERIAL";
-                String inputSummary = "W=" + weight + ", H=" + height + ", " + unit;
-                HistoryService.getInstance().addEntry("BMI", inputSummary, result);
+            double weight = Double.parseDouble(weightText);
+            double height = Double.parseDouble(heightText);
+            BMIUnit unit = (rbMetric == null || rbMetric.isSelected()) ? BMIUnit.METRIC : BMIUnit.IMPERIAL;
+
+            BMICalculatorForm form = new BMICalculatorForm(weight, height, unit);
+            BMICalculatorResult result = service.calculate(form);
+            log.debug("BMI result: isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage(), true);
+            } else {
+                String formatted = String.format("BMI: %.2f%nCategory: %s", result.bmi(), result.category());
+                displayResult(formatted, false);
+                String inputSummary = "W=" + weightText + ", H=" + heightText + ", " + unit;
+                HistoryService.getInstance().addEntry("BMI", inputSummary, formatted);
             }
-        } catch (IllegalArgumentException e) {
-            log.warn("BMI service not registered", e);
-            displayResult("Error: Service not available");
+        } catch (NumberFormatException e) {
+            log.warn("BMI controller: invalid number input", e);
+            displayResult("Error: Invalid numeric input", true);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+    private void displayResult(String text, boolean isError) {
+        resultArea.setStyle(isError ? ERROR_STYLE : NORMAL_STYLE);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

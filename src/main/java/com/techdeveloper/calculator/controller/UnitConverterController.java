@@ -1,9 +1,11 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.constants.UnitCategory;
+import com.techdeveloper.calculator.dto.UnitConverterResult;
+import com.techdeveloper.calculator.form.UnitConverterForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -24,8 +26,7 @@ import java.util.ResourceBundle;
 /**
  * Controller for unit-converter.fxml.
  * Populates category and unit ComboBoxes in initialize()/onCategoryChange().
- * Delegates to UnitConverterService using keys: "value", "fromUnit", "toUnit", "category".
- * Unit display names are mapped to the service's expected codes before calling calculate().
+ * Delegates to UnitConverterService using UnitConverterForm.
  */
 public class UnitConverterController implements Initializable {
 
@@ -41,14 +42,10 @@ public class UnitConverterController implements Initializable {
     @FXML private TextField fieldValue;
     @FXML private Label labelResult;
 
+    private CalculatorService<UnitConverterForm, UnitConverterResult> service;
+
     /** Categories -> display unit names (shown in ComboBox). */
     private static final Map<String, List<String>> UNIT_DISPLAY = new LinkedHashMap<>();
-
-    /**
-     * Mapping: display name -> service code (as expected by UnitConverterService).
-     * Keys must match exactly what UnitConverterService uses in its static maps.
-     */
-    private static final Map<String, String> DISPLAY_TO_CODE = new LinkedHashMap<>();
 
     static {
         UNIT_DISPLAY.put("Length",      List.of("MM", "CM", "M", "KM", "INCH", "FOOT", "YARD", "MILE"));
@@ -57,15 +54,12 @@ public class UnitConverterController implements Initializable {
         UNIT_DISPLAY.put("Volume",      List.of("ML", "L", "CUBICM", "GALLON", "QUART", "PINT", "FLOZ", "CUBICCM"));
         UNIT_DISPLAY.put("Speed",       List.of("MPS", "KPH", "MPH", "KNOT", "FPS"));
         UNIT_DISPLAY.put("Area",        List.of("SQM", "SQKM", "SQFT", "SQMILE", "HECTARE", "ACRE"));
-
-        // For this controller, display codes ARE the service codes — no translation needed.
-        // Codes are passed directly to the service.
     }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.UNIT_CONVERTER);
-        log.debug("UnitConverterController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getUnitConverterService();
+        log.debug("UnitConverterController initialized, service={}", service.getClass().getSimpleName());
         comboCategory.setItems(FXCollections.observableArrayList(UNIT_DISPLAY.keySet()));
         comboCategory.getSelectionModel().selectFirst();
         updateUnitLists("Length");
@@ -84,9 +78,9 @@ public class UnitConverterController implements Initializable {
         String category = comboCategory.getValue();
         String fromUnit = comboFrom.getValue();
         String toUnit   = comboTo.getValue();
-        String value    = fieldValue.getText().trim();
+        String valueText = fieldValue.getText().trim();
 
-        if (value.isEmpty()) {
+        if (valueText.isEmpty()) {
             showErrorDialog("Missing Input", "Please enter a value to convert.");
             return;
         }
@@ -95,27 +89,30 @@ public class UnitConverterController implements Initializable {
             return;
         }
 
-        // category must be uppercase for the service
-        String serviceCategory = category.toUpperCase();
-
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",    value);
-        inputs.put("fromUnit", fromUnit);
-        inputs.put("toUnit",   toUnit);
-        inputs.put("category", serviceCategory);
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.UNIT_CONVERTER);
-            String result = svc.calculate(inputs);
-            log.debug("Unit conversion result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = value + " " + fromUnit + " -> " + toUnit + " (" + category + ")";
-                HistoryService.getInstance().addEntry("Unit", inputSummary, result);
+            double value = Double.parseDouble(valueText);
+            // Map display category string to UnitCategory enum
+            UnitCategory unitCategory = UnitCategory.valueOf(category.toUpperCase());
+
+            UnitConverterForm form = new UnitConverterForm(value, fromUnit, toUnit, unitCategory);
+            UnitConverterResult result = service.calculate(form);
+            log.debug("Unit conversion isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage());
+            } else {
+                String formatted = String.format("%.6g %s = %.6g %s",
+                    value, result.fromUnit(), result.result(), result.toUnit());
+                displayResult(formatted);
+                String inputSummary = valueText + " " + fromUnit + " -> " + toUnit + " (" + category + ")";
+                HistoryService.getInstance().addEntry("Unit", inputSummary, formatted);
             }
+        } catch (NumberFormatException e) {
+            log.warn("UnitConverter controller: invalid value input", e);
+            displayResult("Error: Invalid numeric value");
         } catch (IllegalArgumentException e) {
-            log.warn("UNIT_CONVERTER service not registered", e);
-            displayResult("Error: Service not available");
+            log.warn("UnitConverter controller: unknown category={}", category, e);
+            displayResult("Error: Unknown category");
         }
     }
 

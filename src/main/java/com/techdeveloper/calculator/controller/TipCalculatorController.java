@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.TipCalculatorResult;
+import com.techdeveloper.calculator.form.TipCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -16,14 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for tip-calculator.fxml.
  * Binds the slider to its percentage label and delegates computation to TipCalculatorService.
- * Service inputs: "billAmount", "tipPercent", "splitBy".
+ * Service form: TipCalculatorForm(billAmount, tipPercent, splitBy).
  * Result displayed directly in resultArea — no pipe-parsing.
  */
 public class TipCalculatorController implements Initializable {
@@ -43,10 +42,12 @@ public class TipCalculatorController implements Initializable {
     @FXML private TextField spinnerSplit;
     @FXML private TextArea resultArea;
 
+    private CalculatorService<TipCalculatorForm, TipCalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.TIP);
-        log.debug("TipCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getTipService();
+        log.debug("TipCalculatorController initialized, service={}", service.getClass().getSimpleName());
 
         // Bind slider to the percentage label
         sliderTip.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -63,37 +64,35 @@ public class TipCalculatorController implements Initializable {
             return;
         }
 
-        int tipPercent = (int) sliderTip.getValue();
-        String splitText = spinnerSplit.getText().trim();
-        int splitCount = splitText.isEmpty() ? 1 : Integer.parseInt(splitText);
-
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("billAmount", bill);
-        inputs.put("tipPercent", String.valueOf(tipPercent));
-        inputs.put("splitBy",    String.valueOf(splitCount));
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.TIP);
-            String result = svc.calculate(inputs);
-            log.debug("Tip result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = "Bill=" + bill + ", Tip=" + tipPercent + "%, Split=" + splitCount;
-                HistoryService.getInstance().addEntry("Tip", inputSummary, result);
+            double billAmount = Double.parseDouble(bill);
+            double tipPercent = sliderTip.getValue();
+            String splitText = spinnerSplit.getText().trim();
+            int splitCount = splitText.isEmpty() ? 1 : Integer.parseInt(splitText);
+
+            TipCalculatorForm form = new TipCalculatorForm(billAmount, tipPercent, splitCount);
+            TipCalculatorResult result = service.calculate(form);
+            log.debug("Tip result: isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage(), true);
+            } else {
+                String formatted = String.format(
+                    "Tip Amount: %.2f%nTotal: %.2f%nPer Person: %.2f",
+                    result.tipAmount(), result.total(), result.perPerson());
+                displayResult(formatted, false);
+                String inputSummary = "Bill=" + bill + ", Tip=" + (int) tipPercent + "%, Split=" + splitCount;
+                HistoryService.getInstance().addEntry("Tip", inputSummary, formatted);
             }
-        } catch (IllegalArgumentException e) {
-            log.warn("TIP service not registered", e);
-            displayResult("Error: Service not available");
+        } catch (NumberFormatException e) {
+            log.warn("Tip controller: invalid number input", e);
+            displayResult("Error: Invalid numeric input", true);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+    private void displayResult(String text, boolean isError) {
+        resultArea.setStyle(isError ? ERROR_STYLE : NORMAL_STYLE);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

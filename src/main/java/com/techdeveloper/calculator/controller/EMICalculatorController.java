@@ -1,9 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.dto.EMICalculatorResult;
+import com.techdeveloper.calculator.form.EMICalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -14,14 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for emi-calculator.fxml.
  * Collects principal, annualRate, and tenureMonths; passes them to EMICalculatorService.
- * Displays the full service result string in a single resultArea — no pipe-parsing.
+ * Displays the formatted result in resultArea — no pipe-parsing.
  */
 public class EMICalculatorController implements Initializable {
 
@@ -39,50 +38,53 @@ public class EMICalculatorController implements Initializable {
     @FXML private TextField fieldTenure;
     @FXML private TextArea  resultArea;
 
+    private CalculatorService<EMICalculatorForm, EMICalculatorResult> service;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.EMI);
-        log.debug("EMICalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getEmiService();
+        log.debug("EMICalculatorController initialized, service={}", service.getClass().getSimpleName());
     }
 
     @FXML
     private void onCalculate(ActionEvent event) {
-        String principal = fieldPrincipal.getText().trim();
-        String rate      = fieldRate.getText().trim();
-        String tenure    = fieldTenure.getText().trim();
+        String principalText = fieldPrincipal.getText().trim();
+        String rateText      = fieldRate.getText().trim();
+        String tenureText    = fieldTenure.getText().trim();
 
-        if (principal.isEmpty() || rate.isEmpty() || tenure.isEmpty()) {
+        if (principalText.isEmpty() || rateText.isEmpty() || tenureText.isEmpty()) {
             showErrorDialog("Missing Input", "Please enter Principal, Annual Rate, and Tenure (months).");
             return;
         }
 
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("principal",    principal);
-        inputs.put("annualRate",   rate);
-        inputs.put("tenureMonths", tenure);
-
         try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.EMI);
-            String result = svc.calculate(inputs);
-            log.debug("EMI calculation result: {}", result);
-            displayResult(result);
-            if (!result.startsWith("Error:")) {
-                String inputSummary = "P=" + principal + ", R=" + rate + ", N=" + tenure;
-                HistoryService.getInstance().addEntry("EMI", inputSummary, result);
+            double principal = Double.parseDouble(principalText);
+            double annualRate = Double.parseDouble(rateText);
+            int tenureMonths = Integer.parseInt(tenureText);
+
+            EMICalculatorForm form = new EMICalculatorForm(principal, annualRate, tenureMonths);
+            EMICalculatorResult result = service.calculate(form);
+            log.debug("EMI calculation result: isError={}", result.isError());
+
+            if (result.isError()) {
+                displayResult("Error: " + result.errorMessage(), true);
+            } else {
+                String formatted = String.format(
+                    "Monthly EMI: %.2f%nTotal Interest: %.2f%nTotal Amount: %.2f",
+                    result.monthlyEMI(), result.totalInterest(), result.totalAmount());
+                displayResult(formatted, false);
+                String inputSummary = "P=" + principalText + ", R=" + rateText + ", N=" + tenureText;
+                HistoryService.getInstance().addEntry("EMI", inputSummary, formatted);
             }
-        } catch (IllegalArgumentException e) {
-            log.warn("EMI service not registered", e);
-            displayResult("Error: Service not available");
+        } catch (NumberFormatException e) {
+            log.warn("EMI controller: invalid number input", e);
+            displayResult("Error: Invalid numeric input", true);
         }
     }
 
-    private void displayResult(String result) {
-        if (result.startsWith("Error:")) {
-            resultArea.setStyle(ERROR_STYLE);
-        } else {
-            resultArea.setStyle(NORMAL_STYLE);
-        }
-        resultArea.setText(result);
+    private void displayResult(String text, boolean isError) {
+        resultArea.setStyle(isError ? ERROR_STYLE : NORMAL_STYLE);
+        resultArea.setText(text);
     }
 
     private void showErrorDialog(String title, String message) {

@@ -13,4 +13,8 @@ module com.techdeveloper.calculator {
     exports com.techdeveloper.calculator;
     exports com.techdeveloper.calculator.controller;
     exports com.techdeveloper.calculator.service;
+    exports com.techdeveloper.calculator.service.impl;
+    exports com.techdeveloper.calculator.constants;
+    exports com.techdeveloper.calculator.form;
+    exports com.techdeveloper.calculator.dto;
 }

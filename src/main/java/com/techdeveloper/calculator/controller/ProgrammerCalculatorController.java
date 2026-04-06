@@ -1,9 +1,13 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.constants.NumberBase;
+import com.techdeveloper.calculator.dto.BasicCalculatorResult;
+import com.techdeveloper.calculator.dto.ProgrammerCalculatorResult;
+import com.techdeveloper.calculator.form.BasicCalculatorForm;
+import com.techdeveloper.calculator.form.ProgrammerCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.CalculatorType;
 import com.techdeveloper.calculator.service.HistoryService;
-import com.techdeveloper.calculator.service.ServiceFactory;
+import com.techdeveloper.calculator.service.impl.ServiceFactory;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,15 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Controller for programmer-calculator.fxml.
  * Handles base toggle (HEX/DEC/OCT/BIN), bitwise operations, and display.
- * Delegates to ProgrammerCalculatorService using keys:
- *   "value", "operation", "operand2", "inputBase", "outputBase"
+ * Delegates to ProgrammerCalculatorService using ProgrammerCalculatorForm.
  */
 public class ProgrammerCalculatorController implements Initializable {
 
@@ -49,16 +50,20 @@ public class ProgrammerCalculatorController implements Initializable {
     @FXML private Button btnE;
     @FXML private Button btnF;
 
+    private CalculatorService<ProgrammerCalculatorForm, ProgrammerCalculatorResult> service;
+    private CalculatorService<BasicCalculatorForm, BasicCalculatorResult> basicService;
+
     private String currentInput = "0";
     private String pendingOperand = "";
     private String pendingOperator = "";
     private boolean resultJustShown = false;
-    private String currentBase = "DEC";
+    private NumberBase currentBase = NumberBase.DEC;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.PROGRAMMER);
-        log.debug("ProgrammerCalculatorController initialized, service={}", svc.getClass().getSimpleName());
+        service = ServiceFactory.getInstance().getProgrammerService();
+        basicService = ServiceFactory.getInstance().getBasicService();
+        log.debug("ProgrammerCalculatorController initialized, service={}", service.getClass().getSimpleName());
         display.setText("0");
         updateHexButtonState();
     }
@@ -67,22 +72,16 @@ public class ProgrammerCalculatorController implements Initializable {
 
     @FXML
     private void onBaseChange(ActionEvent event) {
-        String previousBase = currentBase;
-        if (rbHex != null && rbHex.isSelected()) currentBase = "HEX";
-        else if (rbDec != null && rbDec.isSelected()) currentBase = "DEC";
-        else if (rbOct != null && rbOct.isSelected()) currentBase = "OCT";
-        else currentBase = "BIN";
+        NumberBase previousBase = currentBase;
+        if (rbHex != null && rbHex.isSelected()) currentBase = NumberBase.HEX;
+        else if (rbDec != null && rbDec.isSelected()) currentBase = NumberBase.DEC;
+        else if (rbOct != null && rbOct.isSelected()) currentBase = NumberBase.OCT;
+        else currentBase = NumberBase.BIN;
 
         // Convert current displayed value from previous base to new base
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",      currentInput);
-        inputs.put("operation",  "CONVERT");
-        inputs.put("inputBase",  previousBase);
-        inputs.put("outputBase", currentBase);
-        String result = callService(inputs);
-        if (!result.startsWith("Error:")) {
-            // Service returns "BASE: value" — extract the value part after ": "
-            currentInput = extractValue(result);
+        ProgrammerCalculatorResult result = callService(currentInput, "CONVERT", null, previousBase, currentBase);
+        if (!result.isError()) {
+            currentInput = result.value();
             display.setStyle(NORMAL_STYLE);
             display.setText(currentInput);
             updateBitDisplay();
@@ -163,12 +162,7 @@ public class ProgrammerCalculatorController implements Initializable {
     private void onBitwise(ActionEvent event) {
         String op = ((Button) event.getSource()).getText().toUpperCase();
         if ("NOT".equals(op)) {
-            Map<String, String> inputs = new LinkedHashMap<>();
-            inputs.put("value",      currentInput);
-            inputs.put("operation",  "NOT");
-            inputs.put("inputBase",  currentBase);
-            inputs.put("outputBase", currentBase);
-            String result = callService(inputs);
+            ProgrammerCalculatorResult result = callService(currentInput, "NOT", null, currentBase, currentBase);
             applyResult(result);
         } else {
             // Binary bitwise: AND, OR, XOR, SHL, SHR, MOD — store as pending operator
@@ -202,20 +196,14 @@ public class ProgrammerCalculatorController implements Initializable {
 
     /**
      * Evaluate a binary operation on the programmer calculator.
-     * Bitwise ops (AND/OR/XOR/SHL/SHR/MOD) → ProgrammerCalculatorService.
-     * Arithmetic ops (+/−/×/÷) → BasicCalculatorService (after converting to DEC).
+     * Bitwise ops (AND/OR/XOR/SHL/SHR/MOD) -> ProgrammerCalculatorService.
+     * Arithmetic ops (+/-/x//) -> BasicCalculatorService (after converting to DEC).
      */
     private String evaluateBinary(String left, String operator, String right) {
         switch (operator.toUpperCase()) {
             case "AND", "OR", "XOR", "SHL", "SHR", "MOD" -> {
-                Map<String, String> inputs = new LinkedHashMap<>();
-                inputs.put("value",      left);
-                inputs.put("operation",  operator.toUpperCase());
-                inputs.put("operand2",   right);
-                inputs.put("inputBase",  currentBase);
-                inputs.put("outputBase", currentBase);
-                String result = callService(inputs);
-                return result.startsWith("Error:") ? result : extractValue(result);
+                ProgrammerCalculatorResult result = callService(left, operator.toUpperCase(), right, currentBase, currentBase);
+                return result.isError() ? "Error: " + result.errorMessage() : result.value();
             }
             default -> {
                 // Arithmetic: map display symbols to basic-service tokens, operate in DEC
@@ -229,49 +217,43 @@ public class ProgrammerCalculatorController implements Initializable {
                 // Convert operands to DEC first if not already
                 String decLeft  = toDecimal(left);
                 String decRight = toDecimal(right);
-                Map<String, String> inputs = new LinkedHashMap<>();
-                inputs.put("operand1", decLeft);
-                inputs.put("operator", opToken);
-                inputs.put("operand2", decRight);
-                try {
-                    CalculatorService basic = ServiceFactory.getInstance().getService(CalculatorType.BASIC);
-                    String decResult = basic.calculate(inputs);
-                    if (decResult.startsWith("Error:")) return decResult;
-                    // Convert result back to currentBase
-                    Map<String, String> conv = new LinkedHashMap<>();
-                    conv.put("value",      decResult);
-                    conv.put("operation",  "CONVERT");
-                    conv.put("inputBase",  "DEC");
-                    conv.put("outputBase", currentBase);
-                    String converted = callService(conv);
-                    return converted.startsWith("Error:") ? converted : extractValue(converted);
-                } catch (IllegalArgumentException e) {
-                    log.warn("BASIC service unavailable for arithmetic in Programmer controller", e);
-                    return "Error: Service not available";
+                BasicCalculatorForm basicForm = new BasicCalculatorForm(decLeft, opToken, decRight);
+                BasicCalculatorResult basicResult = basicService.calculate(basicForm);
+                if (basicResult.isError()) {
+                    log.warn("BASIC service error in Programmer evaluateBinary: {}", basicResult.errorMessage());
+                    return "Error: " + basicResult.errorMessage();
                 }
+                String decResult = basicResult.formattedResult();
+                // Convert result back to currentBase
+                ProgrammerCalculatorResult converted = callService(decResult, "CONVERT", null, NumberBase.DEC, currentBase);
+                return converted.isError() ? "Error: " + converted.errorMessage() : converted.value();
             }
         }
     }
 
     /** Convert a value from currentBase to DEC string for arithmetic ops. */
     private String toDecimal(String value) {
-        if ("DEC".equals(currentBase)) return value;
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",      value);
-        inputs.put("operation",  "CONVERT");
-        inputs.put("inputBase",  currentBase);
-        inputs.put("outputBase", "DEC");
-        String result = callService(inputs);
-        return result.startsWith("Error:") ? value : extractValue(result);
+        if (NumberBase.DEC.equals(currentBase)) return value;
+        ProgrammerCalculatorResult result = callService(value, "CONVERT", null, currentBase, NumberBase.DEC);
+        return result.isError() ? value : result.value();
     }
 
     private void applyResult(String result) {
         if (result.startsWith("Error:")) {
             showInlineError(result);
         } else {
-            // Service may return "BASE: value" format — extract plain value
-            String value = extractValue(result);
-            currentInput = value;
+            currentInput = result;
+            display.setStyle(NORMAL_STYLE);
+            display.setText(currentInput);
+            updateBitDisplay();
+        }
+    }
+
+    private void applyResult(ProgrammerCalculatorResult result) {
+        if (result.isError()) {
+            showInlineError("Error: " + result.errorMessage());
+        } else {
+            currentInput = result.value();
             display.setStyle(NORMAL_STYLE);
             display.setText(currentInput);
             updateBitDisplay();
@@ -281,14 +263,9 @@ public class ProgrammerCalculatorController implements Initializable {
     private void updateBitDisplay() {
         if (bitDisplay == null) return;
         // Convert current value to BIN to display the bit pattern
-        Map<String, String> inputs = new LinkedHashMap<>();
-        inputs.put("value",      currentInput);
-        inputs.put("operation",  "CONVERT");
-        inputs.put("inputBase",  currentBase);
-        inputs.put("outputBase", "BIN");
-        String bits = callService(inputs);
-        if (!bits.startsWith("Error:")) {
-            String binValue = extractValue(bits);
+        ProgrammerCalculatorResult bits = callService(currentInput, "CONVERT", null, currentBase, NumberBase.BIN);
+        if (!bits.isError()) {
+            String binValue = bits.value();
             // Pad to 16 bits and insert spaces every 4 bits for readability
             String padded = String.format("%16s", binValue).replace(' ', '0');
             String formatted = padded.substring(0, 4) + " " + padded.substring(4, 8) + " "
@@ -300,7 +277,7 @@ public class ProgrammerCalculatorController implements Initializable {
     }
 
     private void updateHexButtonState() {
-        boolean hexEnabled = "HEX".equals(currentBase);
+        boolean hexEnabled = NumberBase.HEX.equals(currentBase);
         if (btnA != null) btnA.setDisable(!hexEnabled);
         if (btnB != null) btnB.setDisable(!hexEnabled);
         if (btnC != null) btnC.setDisable(!hexEnabled);
@@ -309,26 +286,14 @@ public class ProgrammerCalculatorController implements Initializable {
         if (btnF != null) btnF.setDisable(!hexEnabled);
     }
 
-    /**
-     * Service returns "BASE: value" (e.g., "DEC: 42", "HEX: 2A").
-     * Extract only the value part after ": ".
-     */
-    private String extractValue(String serviceResult) {
-        int colonIdx = serviceResult.indexOf(": ");
-        if (colonIdx >= 0 && colonIdx + 2 < serviceResult.length()) {
-            return serviceResult.substring(colonIdx + 2).trim();
+    private ProgrammerCalculatorResult callService(String value, String operation, String operand2,
+                                                    NumberBase inputBase, NumberBase outputBase) {
+        ProgrammerCalculatorForm form = new ProgrammerCalculatorForm(value, operation, operand2, inputBase, outputBase);
+        ProgrammerCalculatorResult result = service.calculate(form);
+        if (result.isError()) {
+            log.warn("PROGRAMMER service error: {}", result.errorMessage());
         }
-        return serviceResult;
-    }
-
-    private String callService(Map<String, String> inputs) {
-        try {
-            CalculatorService svc = ServiceFactory.getInstance().getService(CalculatorType.PROGRAMMER);
-            return svc.calculate(inputs);
-        } catch (IllegalArgumentException e) {
-            log.warn("PROGRAMMER service not registered", e);
-            return "Error: Service not available";
-        }
+        return result;
     }
 
     private void showInlineError(String errorMessage) {
