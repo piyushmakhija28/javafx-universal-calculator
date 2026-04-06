@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox styleClass="calculator-root"
+      spacing="16"
+      style="-fx-padding: 32; -fx-background-color: #1e1e1e; -fx-alignment: top-center;"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.techdeveloper.calculator.controller.BMICalculatorController">
+
+    <Label text="BMI Calculator"
+           style="-fx-text-fill: #e0e0e0; -fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+    <!-- Unit System -->
+    <HBox spacing="16">
+        <fx:define>
+            <ToggleGroup fx:id="unitToggle"/>
+        </fx:define>
+        <Label text="Unit System:" style="-fx-text-fill: #9e9e9e;"/>
+        <RadioButton fx:id="rbMetric"   text="Metric (kg / m)"   toggleGroup="$unitToggle" selected="true"
+                     style="-fx-text-fill: #e0e0e0;" onAction="#onUnitChange"/>
+        <RadioButton fx:id="rbImperial" text="Imperial (lb / in)" toggleGroup="$unitToggle"
+                     style="-fx-text-fill: #e0e0e0;" onAction="#onUnitChange"/>
+    </HBox>
+
+    <GridPane hgap="16" vgap="12">
+        <columnConstraints>
+            <ColumnConstraints minWidth="160" prefWidth="200"/>
+            <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+        </rowConstraints>
+
+        <Label fx:id="labelWeight" text="Weight (kg)" style="-fx-text-fill: #9e9e9e;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="fieldWeight" promptText="e.g. 70" styleClass="display-field"
+                   style="-fx-font-size: 14px; -fx-background-color: #252525; -fx-text-fill: #e0e0e0;
+                          -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6 10 6 10;"
+                   GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label fx:id="labelHeight" text="Height (m)" style="-fx-text-fill: #9e9e9e;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="fieldHeight" promptText="e.g. 1.75" styleClass="display-field"
+                   style="-fx-font-size: 14px; -fx-background-color: #252525; -fx-text-fill: #e0e0e0;
+                          -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6 10 6 10;"
+                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+    <Button fx:id="btnCalculate" text="Calculate BMI" styleClass="calc-button button-accent"
+            onAction="#onCalculate" style="-fx-min-width: 160px;"/>
+
+    <Separator style="-fx-background-color: #404040;"/>
+
+    <GridPane hgap="16" vgap="12">
+        <columnConstraints>
+            <ColumnConstraints minWidth="160"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+        </rowConstraints>
+
+        <Label text="BMI Value" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="labelBMI" text="—" styleClass="result-label"
+               style="-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;"
+               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Category" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="labelCategory" text="—" styleClass="result-label"
+               style="-fx-text-fill: #2ecc71; -fx-font-size: 16px; -fx-font-weight: bold;"
+               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+</VBox>

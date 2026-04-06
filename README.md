@@ -238,7 +238,7 @@ APPROVED verdict unblocks Phase B.
 
 ---
 
-## Phase B — Core Implementation (PARALLEL)
+## Phase B — Core Implementation (PARALLEL) ✅ COMPLETE
 
 > **Mode: PARALLEL** — All 3 subtasks launch simultaneously in a single orchestrator response
 > Gate: Every agent must produce per-file deliverable report. Silent skips = hard failure.
@@ -255,7 +255,7 @@ Phase B launches all 3 agents AT THE SAME TIME:
 
 ---
 
-### B.1 — JavaFX UI Layer
+### B.1 — JavaFX UI Layer ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -329,7 +329,7 @@ Dark theme CSS is not optional. Per-file report for ALL 34 files — zero silent
 
 ---
 
-### B.2 — Calculator Logic / Service Layer
+### B.2 — Calculator Logic / Service Layer ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -402,7 +402,7 @@ All 17 files must appear in deliverable report — zero silent skips allowed.
 
 ---
 
-### B.3 — GitHub Setup & Infrastructure
+### B.3 — GitHub Setup & Infrastructure ✅ COMPLETE
 
 | Field | Detail |
 |---|---|
@@ -462,6 +462,9 @@ CONSTRAINT (read last): Do NOT touch any .java or .fxml files.
 README must include all 15 calculator types with button details.
 "Benefits vs Normal Calculator" section is mandatory.
 ```
+
+> ✅ **PHASE B COMPLETE**: B.1 — 15 FXML files + 15 Controllers created. B.2 — 15 Service classes + ServiceFactory fully registered. B.3 — GitHub repo and README already configured from Phase A. Phase C is now unlocked.
+> ⚠️ **Integration Note**: Controllers use pipe-delimited `key=value|key=value` result parsing. Phase C must reconcile service output formats with controller parse logic.
 
 ---
 

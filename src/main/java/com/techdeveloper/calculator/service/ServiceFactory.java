@@ -15,22 +15,21 @@ public class ServiceFactory {
 
     private ServiceFactory() {
         services = new EnumMap<>(CalculatorType.class);
-        // Phase B: concrete service registrations go here
-        // services.put(CalculatorType.BASIC,         new BasicCalculatorService());
-        // services.put(CalculatorType.SCIENTIFIC,    new ScientificCalculatorService());
-        // services.put(CalculatorType.PROGRAMMER,    new ProgrammerCalculatorService());
-        // services.put(CalculatorType.EMI,           new EMICalculatorService());
-        // services.put(CalculatorType.BMI,           new BMICalculatorService());
-        // services.put(CalculatorType.AGE,           new AgeCalculatorService());
-        // services.put(CalculatorType.DATE_DIFF,     new DateDiffCalculatorService());
-        // services.put(CalculatorType.CURRENCY,      new CurrencyCalculatorService());
-        // services.put(CalculatorType.UNIT_CONVERTER,new UnitConverterService());
-        // services.put(CalculatorType.TIP,           new TipCalculatorService());
-        // services.put(CalculatorType.DISCOUNT,      new DiscountCalculatorService());
-        // services.put(CalculatorType.MATRIX,        new MatrixCalculatorService());
-        // services.put(CalculatorType.STATISTICS,    new StatisticsCalculatorService());
-        // services.put(CalculatorType.SPEED,         new SpeedCalculatorService());
-        // services.put(CalculatorType.FUEL,          new FuelCalculatorService());
+        services.put(CalculatorType.BASIC,          new BasicCalculatorService());
+        services.put(CalculatorType.SCIENTIFIC,     new ScientificCalculatorService());
+        services.put(CalculatorType.PROGRAMMER,     new ProgrammerCalculatorService());
+        services.put(CalculatorType.EMI,            new EMICalculatorService());
+        services.put(CalculatorType.BMI,            new BMICalculatorService());
+        services.put(CalculatorType.AGE,            new AgeCalculatorService());
+        services.put(CalculatorType.DATE_DIFF,      new DateDiffCalculatorService());
+        services.put(CalculatorType.CURRENCY,       new CurrencyCalculatorService());
+        services.put(CalculatorType.UNIT_CONVERTER, new UnitConverterService());
+        services.put(CalculatorType.TIP,            new TipCalculatorService());
+        services.put(CalculatorType.DISCOUNT,       new DiscountCalculatorService());
+        services.put(CalculatorType.MATRIX,         new MatrixCalculatorService());
+        services.put(CalculatorType.STATISTICS,     new StatisticsCalculatorService());
+        services.put(CalculatorType.SPEED,          new SpeedCalculatorService());
+        services.put(CalculatorType.FUEL,           new FuelCalculatorService());
     }
 
     public static ServiceFactory getInstance() {

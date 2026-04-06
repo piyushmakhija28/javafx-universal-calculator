@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox styleClass="calculator-root"
+      spacing="16"
+      style="-fx-padding: 32; -fx-background-color: #1e1e1e; -fx-alignment: top-center;"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.techdeveloper.calculator.controller.DateDiffCalculatorController">
+
+    <Label text="Date Difference Calculator"
+           style="-fx-text-fill: #e0e0e0; -fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+    <GridPane hgap="16" vgap="12">
+        <columnConstraints>
+            <ColumnConstraints minWidth="160" prefWidth="200"/>
+            <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+        </rowConstraints>
+
+        <Label text="Start Date" style="-fx-text-fill: #9e9e9e;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <DatePicker fx:id="pickerStart" promptText="Select start date"
+                    style="-fx-background-color: #252525; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4;"
+                    GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="End Date" style="-fx-text-fill: #9e9e9e;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <DatePicker fx:id="pickerEnd" promptText="Select end date"
+                    style="-fx-background-color: #252525; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4;"
+                    GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+    <Button fx:id="btnCalculate" text="Calculate Difference" styleClass="calc-button button-accent"
+            onAction="#onCalculate" style="-fx-min-width: 180px;"/>
+
+    <Separator style="-fx-background-color: #404040;"/>
+
+    <GridPane hgap="16" vgap="12">
+        <columnConstraints>
+            <ColumnConstraints minWidth="160"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+            <RowConstraints minHeight="36"/>
+        </rowConstraints>
+
+        <Label text="Total Days" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="labelDays" text="—" styleClass="result-label"
+               style="-fx-text-fill: #4a90d9; -fx-font-size: 22px; -fx-font-weight: bold;"
+               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Total Weeks" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="labelWeeks" text="—" styleClass="result-label"
+               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
+               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <Label text="Total Months" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Label fx:id="labelMonths" text="—" styleClass="result-label"
+               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
+               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+        <Label text="Total Years" style="-fx-text-fill: #9e9e9e; -fx-font-size: 14px;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Label fx:id="labelYears" text="—" styleClass="result-label"
+               style="-fx-text-fill: #ffffff; -fx-font-size: 16px;"
+               GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+
+</VBox>

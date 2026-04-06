@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox styleClass="calculator-root"
+      spacing="8"
+      style="-fx-padding: 16; -fx-background-color: #1e1e1e;"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.techdeveloper.calculator.controller.ScientificCalculatorController">
+
+    <!-- Display -->
+    <TextField fx:id="display"
+               styleClass="display-field"
+               editable="false"
+               alignment="CENTER_RIGHT"
+               style="-fx-font-size: 24px; -fx-background-color: #1a1a1a; -fx-text-fill: #ffffff;
+                      -fx-font-family: 'Consolas', monospace; -fx-border-color: #404040;
+                      -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4;
+                      -fx-padding: 8 12 8 12;"/>
+
+    <!-- DEG / RAD Toggle -->
+    <HBox spacing="8">
+        <fx:define>
+            <ToggleGroup fx:id="angleToggle"/>
+        </fx:define>
+        <ToggleButton fx:id="btnDeg" text="DEG" toggleGroup="$angleToggle" selected="true"
+                      styleClass="calc-button"
+                      style="-fx-min-width: 60px;"
+                      onAction="#onAngleModeChange"/>
+        <ToggleButton fx:id="btnRad" text="RAD" toggleGroup="$angleToggle"
+                      styleClass="calc-button"
+                      style="-fx-min-width: 60px;"
+                      onAction="#onAngleModeChange"/>
+    </HBox>
+
+    <!-- Button Grid: 5 rows × 6 columns -->
+    <GridPane styleClass="calculator-root" hgap="5" vgap="5" VBox.vgrow="ALWAYS">
+
+        <columnConstraints>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+            <ColumnConstraints hgrow="ALWAYS" percentWidth="16.66"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints vgrow="ALWAYS" percentHeight="20"/>
+            <RowConstraints vgrow="ALWAYS" percentHeight="20"/>
+            <RowConstraints vgrow="ALWAYS" percentHeight="20"/>
+            <RowConstraints vgrow="ALWAYS" percentHeight="20"/>
+            <RowConstraints vgrow="ALWAYS" percentHeight="20"/>
+        </rowConstraints>
+
+        <!-- Row 0: Scientific functions -->
+        <Button text="sin"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Button text="cos"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Button text="tan"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+        <Button text="log"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+        <Button text="ln"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+        <Button text="e^x"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+
+        <!-- Row 1: More scientific + operators -->
+        <Button text="x^y"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Button text="x²"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Button text="√"    styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+        <Button text="n!"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onScientific" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+        <Button text="π"    styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onConstant"   GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+        <Button text="e"    styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onConstant"   GridPane.columnIndex="5" GridPane.rowIndex="1"/>
+
+        <!-- Row 2: 7 8 9 ÷ C CE -->
+        <Button text="7"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Button text="8"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Button text="9"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+        <Button text="÷"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onOperator" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+        <Button text="C"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onClear"    GridPane.columnIndex="4" GridPane.rowIndex="2"/>
+        <Button text="CE" styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onClearEntry" GridPane.columnIndex="5" GridPane.rowIndex="2"/>
+
+        <!-- Row 3: 4 5 6 × ( ) -->
+        <Button text="4"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Button text="5"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Button text="6"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+        <Button text="×"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onOperator" GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+        <Button text="("  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onParenthesis" GridPane.columnIndex="4" GridPane.rowIndex="3"/>
+        <Button text=")"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onParenthesis" GridPane.columnIndex="5" GridPane.rowIndex="3"/>
+
+        <!-- Row 4: 1 2 3 − + = -->
+        <Button text="1"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <Button text="2"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        <Button text="3"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onDigit"    GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+        <Button text="−"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onOperator" GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+        <Button text="+"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onOperator" GridPane.columnIndex="4" GridPane.rowIndex="4"/>
+        <Button fx:id="btnEquals" text="=" styleClass="calc-button button-accent" maxWidth="Infinity" maxHeight="Infinity" onAction="#onEquals" GridPane.columnIndex="5" GridPane.rowIndex="4"/>
+
+    </GridPane>
+</VBox>
