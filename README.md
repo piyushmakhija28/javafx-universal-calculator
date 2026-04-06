@@ -1,7 +1,7 @@
 # 🧮 Universal JavaFX Calculator Suite
 
-[![Java](https://img.shields.io/badge/Java-21-orange?logo=java)](https://openjdk.org/)
-[![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)](https://openjfx.io/)
+[![Java](https://img.shields.io/badge/Java-25-orange?logo=java)](https://openjdk.org/)
+[![JavaFX](https://img.shields.io/badge/JavaFX-25-blue)](https://openjfx.io/)
 [![Maven](https://img.shields.io/badge/Maven-3.8+-red?logo=apache-maven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-piyushmakhija28-black?logo=github)](https://github.com/piyushmakhija28/javafx-universal-calculator)
@@ -73,8 +73,8 @@
 
 | Layer | Technology |
 |---|---|
-| Language | Java 21 |
-| UI Framework | JavaFX 21 (FXML + CSS) |
+| Language | Java 25 |
+| UI Framework | JavaFX 25 (FXML + CSS) |
 | Build Tool | Maven 3.8+ |
 | Architecture | MVC — FXML (View) + Controller (Behavior) + Service (Logic) |
 | Theme | Dark CSS (`-fx-background-color: #1e1e1e`) |
@@ -115,7 +115,7 @@ src/
 
 ## ▶ Build & Run
 
-**Prerequisites:** Java 21, Maven 3.8+
+**Prerequisites:** Java 25, Maven 3.8+
 
 ```bash
 # Clone the repo
@@ -167,7 +167,7 @@ AGENT: solution-architect
 
 Objective: Create GSD v1.0 for a Universal JavaFX Calculator with 15 calculator types.
 
-Requirements: Java 21, JavaFX 21, Maven, MVC (FXML+Controller+Service), dark CSS theme,
+Requirements: Java 25, JavaFX 25, Maven, MVC (FXML+Controller+Service), dark CSS theme,
 Menu Bar with dynamic FXML loading. Calculator types: Basic, Scientific, Programmer,
 EMI, BMI, Age, Date Difference, Currency, Unit Converter, Tip, Discount, Matrix,
 Statistics, Speed/Distance/Time, Fuel Efficiency.
@@ -289,7 +289,7 @@ classes. Per-file deliverable report is MANDATORY for all 34 files. Silent skips
 Objective: Build the complete JavaFX UI layer for the Universal Calculator.
 
 Project path: c:\Users\techd\Documents\workspace-spring-tool-suite-4-4.27.0-new\Calculator\
-Java: 21 | JavaFX: 21 | Maven (pom.xml already exists)
+Java: 25 | JavaFX: 25 | Maven (pom.xml already exists)
 
 Create these files:
 1. App.java — extends Application, loads main.fxml, sets stage "Universal Calculator",
@@ -413,7 +413,7 @@ All 17 files must appear in deliverable report — zero silent skips allowed.
 | **Produces** | GitHub repo URL, updated pom.xml, initial README.md, git push |
 
 **What to do:**
-- Update `pom.xml` → Java 21, JavaFX 21, javafx-maven-plugin 0.0.8
+- Update `pom.xml` → Java 25, JavaFX 25, javafx-maven-plugin 0.0.8
 - Create public GitHub repo `piyushmakhija28/Calculator`
 - Initialize git, set branch `main`, push all files
 - Write comprehensive `README.md` (users need project info before code is done)
@@ -431,10 +431,10 @@ Objective: Setup GitHub repo and write README.md for the Universal JavaFX Calcul
 Project path: c:\Users\techd\Documents\workspace-spring-tool-suite-4-4.27.0-new\Calculator\
 
 Task 1 — Update pom.xml:
-  - maven.compiler.source → 21
-  - maven.compiler.target → 21
-  - javafx-controls version → 21
-  - javafx-fxml version → 21
+  - maven.compiler.source → 25
+  - maven.compiler.target → 25
+  - javafx-controls version → 25
+  - javafx-fxml version → 25
   - javafx-maven-plugin version → 0.0.8
   - mainClass → com.techdeveloper.calculator.App
 
@@ -881,5 +881,5 @@ MIT License — see [LICENSE](LICENSE) file for details.
 
 ---
 
-> Built with ❤️ using JavaFX 21 | Multi-agent orchestration by [piyushmakhija28](https://github.com/piyushmakhija28)
+> Built with ❤️ using JavaFX 25 | Multi-agent orchestration by [piyushmakhija28](https://github.com/piyushmakhija28)
 > 🔗 Repo: [github.com/piyushmakhija28/javafx-universal-calculator](https://github.com/piyushmakhija28/javafx-universal-calculator)

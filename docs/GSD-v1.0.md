@@ -458,11 +458,11 @@ public class BasicCalculatorController {
   applying the stylesheet at Scene level in `UniversalCalculatorApp.start()` provides a
   safety net for all nodes.
 
-### ADR-006: Java 21 Target with JavaFX 21
-- **Decision**: Target Java 21 LTS with JavaFX 21 dependencies
-- **Reason**: Java 21 is the current LTS release; JavaFX 21 aligns with it
-- **Impact**: pom.xml uses `<release>21</release>` in maven-compiler-plugin; all source
-  and bytecode targets Java 21
+### ADR-006: Java 25 Target with JavaFX 25
+- **Decision**: Target Java 25 with JavaFX 25 dependencies
+- **Reason**: Java 25 is the intended platform for this project; JavaFX 25 aligns with it
+- **Impact**: pom.xml uses `<release>25</release>` in maven-compiler-plugin; all source
+  and bytecode targets Java 25
 
 ---
 
@@ -473,7 +473,7 @@ should be addressed before Phase B begins:
 
 | # | Item | Severity | Status |
 |---|---|---|---|
-| 1 | pom.xml `maven.compiler.source/target` properties say `25` but `<release>21</release>` correctly overrides. Properties should be set to `21` for consistency. | MEDIUM | Fix in Phase B start |
+| 1 | pom.xml `maven.compiler.source/target` and `<release>` all aligned to `25`. Java 25 + JavaFX 25 is the confirmed target. | RESOLVED | Done |
 | 2 | `UniversalCalculatorApp.start()` does not apply dark-theme.css at Scene level. Currently applied via FXML `stylesheets` attribute on root BorderPane. Consider adding `scene.getStylesheets().add(...)` as safety net for child FXMLs. | MEDIUM | Fix in Phase B start |
 | 3 | ViewRouter is lazy singleton (not thread-safe). Acceptable for JavaFX since all access is from the FX Application Thread, but should be documented. | LOW | Documented |
 
@@ -508,3 +508,4 @@ should be addressed before Phase B begins:
 |---------|-----------|--------|
 | v1.0 | solution-architect | Initial GSD -- all sections drafted |
 | v1.0.1 | solution-architect | Post-implementation audit: added phase markers [A1]/[B] to project tree, added MainAppController to tree, fixed CSS token syntax documentation to note JavaFX convention, added SeparatorMenuItem to menu structure, updated ViewRouter pseudocode with null-check guard, updated ServiceFactory with IllegalArgumentException, added ADR-006 (Java 21 target), added Section 13 (Audit Notes), added Change Log |
+| v1.0.2 | user decision | Updated target platform to Java 25 + JavaFX 25 everywhere (pom.xml, README, GSD, ADR-006); resolved Audit Note #1 (compiler properties now fully consistent at 25) |
