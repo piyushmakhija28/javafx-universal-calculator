@@ -43,7 +43,7 @@
         <!-- Row 0: C  CE  %  ÷ -->
         <Button fx:id="btnClear"    text="C"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onClear"      GridPane.columnIndex="0" GridPane.rowIndex="0"/>
         <Button fx:id="btnCE"       text="CE"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onClearEntry" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        <Button fx:id="btnPercent"  text="%"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onPercent"    GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+        <Button fx:id="btnPercent"  text="%%"  styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onPercent"    GridPane.columnIndex="2" GridPane.rowIndex="0"/>
         <Button fx:id="btnDivide"   text="÷"   styleClass="calc-button" maxWidth="Infinity" maxHeight="Infinity" onAction="#onOperator"   GridPane.columnIndex="3" GridPane.rowIndex="0"/>
 
         <!-- Row 1: 7  8  9  × -->
