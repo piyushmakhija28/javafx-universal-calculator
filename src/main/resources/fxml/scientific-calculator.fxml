@@ -12,6 +12,7 @@
 
 <VBox styleClass="calculator-root"
       spacing="8"
+      prefWidth="680" prefHeight="560"
       style="-fx-padding: 16; -fx-background-color: #1e1e1e;"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.techdeveloper.calculator.controller.ScientificCalculatorController">
