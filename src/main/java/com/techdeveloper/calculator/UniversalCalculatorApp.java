@@ -24,6 +24,10 @@ public class UniversalCalculatorApp extends Application {
                 getClass().getResource("/fxml/main.fxml"));
 
         Scene scene = new Scene(root, 900, 650);
+        // Apply dark theme at Scene level — safety net so all child FXMLs
+        // loaded into center pane also inherit the stylesheet (ADR-005, GSD Audit #2)
+        scene.getStylesheets().add(
+                getClass().getResource("/css/dark-theme.css").toExternalForm());
 
         stage.setTitle("Universal Calculator Suite");
         stage.setScene(scene);

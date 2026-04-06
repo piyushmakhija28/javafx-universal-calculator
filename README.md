@@ -234,7 +234,7 @@ If REJECTED: return control to orchestrator with blocker list.
 APPROVED verdict unblocks Phase B.
 ```
 
-> ⛔ **GATE**: Phase B does NOT start until `consensus-agent` returns `APPROVED`.
+> ✅ **GATE PASSED**: `consensus-agent` returned `APPROVED` — 6/6 checks passed. Phase B is unlocked.
 
 ---
 
