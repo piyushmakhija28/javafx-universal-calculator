@@ -25,6 +25,7 @@
   - [Phase C — Integration](#phase-c--integration-sequential)
   - [Phase D — QA Verification](#phase-d--qa-verification-sequential)
   - [Phase E — Documentation & Final Push](#phase-e--documentation--final-push-sequential)
+  - [Phase F — Pro Feature Enhancements](#phase-f--pro-feature-enhancements-optional)
 - [Agent Execution Map](#-agent-execution-map)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -637,6 +638,161 @@ Output:
 
 ---
 
+## Phase F — Pro Feature Enhancements (OPTIONAL)
+
+> **Mode: PARALLEL** — All 3 subtasks can launch simultaneously after Phase E
+> These are optional upgrade phases — add them after v1.0 is complete and stable.
+
+```
+Phase F launches all 3 agents AT THE SAME TIME:
+  ┌──────────────────────────────┐
+  │  F.1 javafx-engineer         │  ← History Tab (last 10-20 calculations)
+  │  F.2 spring-boot-ms          │  ← Real-time Currency API integration
+  │  F.3 javafx-engineer (graph) │  ← Function Plotter (Scientific Calculator)
+  └──────────────────────────────┘
+         (all parallel)
+```
+
+---
+
+### F.1 — Calculation History Feature
+
+| Field | Detail |
+|---|---|
+| **Agent** | `javafx-engineer` |
+| **Mode** | Parallel (with F.2 and F.3) |
+| **Depends On** | Phase E — v1.0 complete |
+| **Skills** | `javafx-ide-designer`, `java-design-patterns-core` |
+| **Produces** | `history-panel.fxml`, `HistoryService.java`, updated Controllers |
+
+**What to do:**
+- Add a collapsible **History Panel** (side drawer or bottom tab) in `main.fxml`
+- Create `HistoryService.java` — maintains an in-memory `LinkedList<String>` (max 20 entries)
+- Each calculator's Controller calls `HistoryService.addEntry(calculatorType, input, result)` after every calculation
+- History panel shows: timestamp, calculator type, inputs used, result
+- Add **Clear History** button and **Copy to Clipboard** per row action
+
+**Prompt for agent:**
+```
+AGENT: javafx-engineer (Phase F.1 — History Feature)
+Skills: javafx-ide-designer, java-design-patterns-core
+
+Objective: Add a Calculation History panel to the Universal JavaFX Calculator.
+
+Requirements:
+1. HistoryService.java — Singleton, stores LinkedList<HistoryEntry> max 20 items
+   HistoryEntry: { String calculatorType, String inputs, String result, LocalDateTime timestamp }
+2. history-panel.fxml — ListView<HistoryEntry> with custom cell factory
+   Each row: "[HH:mm] <CalculatorType> | <inputs> = <result>"  + Copy button per row
+3. main.fxml update — add a "History" tab or collapsible SplitPane drawer (right side)
+4. All 15 Controllers — after service.calculate() call, add:
+   HistoryService.getInstance().addEntry(type, inputs, result)
+5. Clear History button — HistoryService.clear() + ListView.refresh()
+
+Dark theme applies to history panel too (reuse dark-theme.css tokens).
+Per-file deliverable report mandatory for all modified files.
+```
+
+---
+
+### F.2 — Real-Time Currency API Integration
+
+| Field | Detail |
+|---|---|
+| **Agent** | `spring-boot-microservices` |
+| **Mode** | Parallel (with F.1 and F.3) |
+| **Depends On** | Phase E — v1.0 complete |
+| **Skills** | `java-spring-boot-microservices`, `error-handling-patterns` |
+| **Produces** | `LiveCurrencyService.java`, updated `CurrencyCalculatorController.java` |
+
+**What to do:**
+- Create `LiveCurrencyService.java` — fetches live rates from a free public API (e.g., `exchangerate-api.com` or `open.er-api.com`) using `java.net.http.HttpClient`
+- Cache rates for 60 minutes (avoid flooding API) using `Instant` + stale-check
+- Fallback to static rates (`CurrencyCalculatorService` existing map) when API is unavailable
+- Show a "Live" or "Cached (HH:mm)" indicator badge in the Currency Calculator UI
+- Wrap the HTTP call in `Task<Map<String,Double>>` so UI never freezes
+
+**Prompt for agent:**
+```
+AGENT: spring-boot-microservices (Phase F.2 — Live Currency API)
+Skills: java-spring-boot-microservices, error-handling-patterns
+
+Objective: Add real-time currency rate fetching to CurrencyCalculatorService.
+
+Requirements:
+1. LiveCurrencyService.java — uses java.net.http.HttpClient (Java 11+) to GET
+   https://open.er-api.com/v6/latest/USD (free, no API key required)
+   Parse JSON response using org.json or Jackson (add to pom.xml if needed)
+2. Rate cache: Map<String,Double> cachedRates + Instant lastFetched
+   Refresh if lastFetched is null OR older than 60 minutes
+3. Fallback: if HTTP call fails (timeout, no internet) → use static rates from
+   CurrencyCalculatorService (existing implementation) + log warning
+4. CurrencyCalculatorController update:
+   - On initialize(), call LiveCurrencyService.fetchRatesAsync() via Task<Map<String,Double>>
+   - Show Label "Rates: Live (HH:mm)" or "Rates: Offline (static)" in UI
+   - On task failure → show Alert "Live rates unavailable — using offline rates"
+5. Update pom.xml if JSON parsing library needs to be added
+
+Per-file report mandatory. Do NOT break the existing offline fallback path.
+```
+
+---
+
+### F.3 — Function Plotter (Scientific Calculator)
+
+| Field | Detail |
+|---|---|
+| **Agent** | `javafx-engineer` |
+| **Mode** | Parallel (with F.1 and F.2) |
+| **Depends On** | Phase E — v1.0 complete |
+| **Auto-invokes** | `mathematics-engineer` (expression parser, plot sampling math) |
+| **Skills** | `javafx-ide-designer`, `java-design-patterns-core`, `performance-optimization` |
+| **Produces** | `function-plotter.fxml`, `FunctionPlotterController.java`, `PlotterService.java` |
+
+**What to do:**
+- Add a **"Plot"** button to `scientific-calculator.fxml` that opens a new `Stage` with the plotter
+- Create `function-plotter.fxml` — `Canvas` for plot area + `TextField` for f(x) expression + X-range sliders
+- Create `PlotterService.java` — parses f(x) expressions (sin, cos, tan, log, sqrt, x², constants π, e) and returns `double[]` y-values for given x-range
+- Use JavaFX `Canvas` + `GraphicsContext` to draw axes, grid, and the function curve
+- Render in `Task<double[]>` so large ranges don't freeze the UI
+- Support at least: `sin(x)`, `cos(x)`, `x^2`, `log(x)`, `sqrt(x)`, `2*x+1`
+
+**Prompt for agent:**
+```
+AGENT: javafx-engineer (Phase F.3 — Function Plotter)
+Skills: javafx-ide-designer, java-design-patterns-core, performance-optimization
+
+Auto-delegate to mathematics-engineer BEFORE coding:
+  - Expression parser design: tokenizer + recursive descent parser for f(x)
+  - Plot sampling: adaptive step size based on x-range to avoid aliasing
+
+Objective: Add a Function Plotter to the Scientific Calculator.
+
+Requirements:
+1. scientific-calculator.fxml — add "Plot f(x)" Button below existing buttons
+2. function-plotter.fxml — new Stage layout:
+   - TextField: "f(x) = " input (e.g. sin(x), x^2, 2*x+1)
+   - Sliders: X min (default -10), X max (default +10)
+   - Canvas 600×400: white grid on dark background, red X-axis, blue Y-axis, green curve
+   - "Plot" Button + "Clear" Button
+3. PlotterService.java:
+   - parse(String expression) → validates tokens
+   - evaluate(String expression, double x) → returns double y-value
+   - sample(String expression, double xMin, double xMax, int points) → double[] yValues
+   Supported tokens: x, sin, cos, tan, log, sqrt, pi, e, ^, *, /, +, -
+4. FunctionPlotterController.java:
+   - On Plot click → Task<double[]> calls PlotterService.sample() with 500 points
+   - On task success → Platform.runLater() draws polyline on Canvas
+   - On task failure → Alert with parse error message
+5. ScientificCalculatorController.java — add handler for "Plot f(x)" button
+   that opens new Stage with function-plotter.fxml
+
+Canvas drawing: draw axes first, then scale y-values to canvas height, draw polyline.
+Per-file deliverable report mandatory. Async rendering required (Task<double[]>).
+```
+
+---
+
 ## 📊 Agent Execution Map
 
 ```
@@ -671,9 +827,15 @@ Phase E (Sequential)
          │
          ▼
 [E.2] devops-engineer ──── git diff --stat (Ground-Truth Gate)
+         │  COMPLETE
+         ▼
+Phase F (All 3 in PARALLEL — optional, post-v1.0)
 ────────────────────────────────────────────────────
-Total Agent Invocations: 7 (A.1, A.2, B.1, B.2, B.3, C.1, D.1, E.1, E.2 = 9 calls)
-Expected Files: ~54 | Phase B is true parallel (3 agents, 1 response)
+[F.1] javafx-engineer      [F.2] spring-boot-ms     [F.3] javafx-engineer
+  (History Panel)           (Live Currency API)       (Function Plotter)
+────────────────────────────────────────────────────
+Total Agent Invocations: 9 (v1.0) + 3 (Phase F optional) = 12 calls
+Expected Files: ~54 (v1.0) + ~8 (Phase F) | Phase B and F are true parallel
 ```
 
 ---
@@ -689,7 +851,11 @@ Expected Files: ~54 | Phase B is true parallel (3 agents, 1 response)
 | C | 15 | 15 Controllers (updated with Service wiring) |
 | D | 1 | QA Coverage Matrix report |
 | E | 2 | README.md (final), git commit |
-| **Total** | **~54** | |
+| F.1 | 3 | HistoryService.java, history-panel.fxml, 15 Controllers (updated) |
+| F.2 | 2 | LiveCurrencyService.java, CurrencyCalculatorController (updated) |
+| F.3 | 3 | PlotterService.java, function-plotter.fxml, FunctionPlotterController.java |
+| **Total (v1.0)** | **~54** | |
+| **Total (with Phase F)** | **~62** | |
 
 ---
 
