@@ -1,5 +1,6 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.controller.helper.CurrencyCalculatorHelper;
 import com.techdeveloper.calculator.dto.CurrencyCalculatorResult;
 import com.techdeveloper.calculator.form.CurrencyCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
@@ -37,7 +38,7 @@ import java.util.ResourceBundle;
  *   <li>Fallback: delegates to CurrencyCalculatorService using CurrencyCalculatorForm
  * </ul>
  */
-public class CurrencyCalculatorController implements Initializable {
+public class CurrencyCalculatorController extends CurrencyCalculatorHelper implements Initializable {
 
     public CurrencyCalculatorController() {
         // required for FXML
@@ -86,43 +87,45 @@ public class CurrencyCalculatorController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         service = ServiceFactory.getInstance().getCurrencyService();
+        setupComboBoxes();
+        setStatusLabel("Fetching live rates...", "#9e9e9e");
+        startBackgroundRateFetch();
+        log.debug("CurrencyCalculatorController initialized — background rate fetch started");
+    }
+
+    private void setupComboBoxes() {
         comboFrom.setItems(FXCollections.observableArrayList(CURRENCIES));
         comboTo.setItems(FXCollections.observableArrayList(CURRENCIES));
-        comboFrom.getSelectionModel().select(0); // USD
-        comboTo.getSelectionModel().select(3);   // INR
+        comboFrom.getSelectionModel().select(0);
+        comboTo.getSelectionModel().select(3);
+    }
 
-        setStatusLabel("Fetching live rates...", "#9e9e9e");
-
+    private void startBackgroundRateFetch() {
         Task<Map<String, Double>> fetchTask = LiveCurrencyService.getInstance().fetchRatesAsync();
-
-        fetchTask.setOnSucceeded(event -> {
-            Map<String, Double> rates = fetchTask.getValue();
-            Platform.runLater(() -> {
-                if (rates != null && !rates.isEmpty()) {
-                    liveRates = rates;
-                    String time = LiveCurrencyService.getInstance().getLastFetchTimeFormatted();
-                    setStatusLabel("Live (" + time + ")", "#2ecc71");
-                    log.info("CurrencyCalculatorController: live rates loaded ({} currencies, fetched at {})",
-                            rates.size(), time);
-                } else {
-                    setStatusLabel("Offline (static rates)", "#9e9e9e");
-                    log.info("CurrencyCalculatorController: live rate fetch returned null — using static rates");
-                }
-            });
-        });
-
+        fetchTask.setOnSucceeded(event -> Platform.runLater(() -> onFetchSucceeded(fetchTask)));
         fetchTask.setOnFailed(event -> Platform.runLater(() -> {
             setStatusLabel("Offline (static rates)", "#9e9e9e");
             log.warn("CurrencyCalculatorController: live rate fetch task failed — using static rates",
                     fetchTask.getException());
         }));
-
         Thread fetchThread = new Thread(fetchTask);
         fetchThread.setDaemon(true);
         fetchThread.setName("currency-rate-fetch");
         fetchThread.start();
+    }
 
-        log.debug("CurrencyCalculatorController initialized — background rate fetch started");
+    private void onFetchSucceeded(Task<Map<String, Double>> fetchTask) {
+        Map<String, Double> rates = fetchTask.getValue();
+        if (rates != null && !rates.isEmpty()) {
+            liveRates = rates;
+            String time = LiveCurrencyService.getInstance().getLastFetchTimeFormatted();
+            setStatusLabel("Live (" + time + ")", "#2ecc71");
+            log.info("CurrencyCalculatorController: live rates loaded ({} currencies, fetched at {})",
+                    rates.size(), time);
+        } else {
+            setStatusLabel("Offline (static rates)", "#9e9e9e");
+            log.info("CurrencyCalculatorController: live rate fetch returned null — using static rates");
+        }
     }
 
     @FXML
@@ -167,13 +170,12 @@ public class CurrencyCalculatorController implements Initializable {
             double converted    = amount * rateTo / rateFrom;
             double exchangeRate = rateTo / rateFrom;
 
-            String result = String.format("%.2f %s = %.2f %s (Rate: 1 %s = %.4f %s)",
-                    amount, fromCode, converted, toCode, fromCode, exchangeRate, toCode);
+            String formattedResult = formatConversionResult(amount, fromCode, converted, toCode, exchangeRate);
 
-            log.debug("CurrencyCalculatorController: live conversion — {}", result);
-            displayResult(result);
+            log.debug("CurrencyCalculatorController: live conversion — {}", formattedResult);
+            displayResult(formattedResult);
             String inputSummary = amountText + " " + fromCode + " -> " + toCode;
-            HistoryService.getInstance().addEntry("Currency", inputSummary, result);
+            HistoryService.getInstance().addEntry("Currency", inputSummary, formattedResult);
 
         } catch (NumberFormatException e) {
             displayResult("Error: Invalid number format for amount");
@@ -190,9 +192,8 @@ public class CurrencyCalculatorController implements Initializable {
             if (result.isError()) {
                 displayResult("Error: " + result.errorMessage());
             } else {
-                String formatted = String.format("%.2f %s = %.2f %s (Rate: 1 %s = %.4f %s)",
-                    amount, result.fromCode(), result.convertedAmount(), result.toCode(),
-                    result.fromCode(), result.rate(), result.toCode());
+                String formatted = formatConversionResult(amount, result.fromCode(),
+                        result.convertedAmount(), result.toCode(), result.rate());
                 displayResult(formatted);
                 String inputSummary = amountText + " " + fromCode + " -> " + toCode;
                 HistoryService.getInstance().addEntry("Currency", inputSummary, formatted);
@@ -221,11 +222,6 @@ public class CurrencyCalculatorController implements Initializable {
             labelRateStatus.setStyle(
                     "-fx-font-size: 11px; -fx-font-style: italic; -fx-text-fill: " + colorHex + ";");
         }
-    }
-
-    /** Extracts the 3-letter currency code from "USD - US Dollar". */
-    private String extractCode(String item) {
-        return item.substring(0, 3);
     }
 
     private void showErrorDialog(String title, String message) {

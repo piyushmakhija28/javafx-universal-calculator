@@ -1,11 +1,10 @@
 package com.techdeveloper.calculator.controller;
 
+import com.techdeveloper.calculator.controller.helper.StatisticsCalculatorHelper;
 import com.techdeveloper.calculator.dto.StatisticsCalculatorResult;
 import com.techdeveloper.calculator.form.StatisticsCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
-import com.techdeveloper.calculator.service.HistoryService;
 import com.techdeveloper.calculator.service.impl.ServiceFactory;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 
 /**
@@ -26,7 +24,7 @@ import java.util.ResourceBundle;
  *
  * Service form: StatisticsCalculatorForm(data) — double[] parsed from comma-separated input.
  */
-public class StatisticsCalculatorController implements Initializable {
+public class StatisticsCalculatorController extends StatisticsCalculatorHelper implements Initializable {
 
     public StatisticsCalculatorController() {
         // required for FXML
@@ -58,78 +56,38 @@ public class StatisticsCalculatorController implements Initializable {
             showErrorDialog("Missing Input", "Please enter comma-separated numbers.");
             return;
         }
-
-        // Cancel any previously running task before starting a new one
-        if (currentTask != null && currentTask.isRunning()) {
-            currentTask.cancel();
-        }
-
+        if (currentTask != null && currentTask.isRunning()) currentTask.cancel();
         resultArea.setStyle(NORMAL_STYLE);
         resultArea.setText("Computing...");
-
-        // Parse the comma-separated input into a double array here — fail fast before Task launch
         final double[] data;
         try {
-            String[] tokens = rawInput.split(",");
-            data = new double[tokens.length];
-            for (int i = 0; i < tokens.length; i++) {
-                data[i] = Double.parseDouble(tokens[i].trim());
-            }
+            data = parseInputData(rawInput);
         } catch (NumberFormatException e) {
             log.warn("Statistics controller: invalid number in input", e);
             resultArea.setStyle(ERROR_STYLE);
             resultArea.setText("Error: Invalid number in input");
             return;
         }
+        currentTask = buildComputeTask(data);
+        wireTaskSucceeded(currentTask, rawInput, resultArea, NORMAL_STYLE, ERROR_STYLE);
+        wireTaskFailed(currentTask, resultArea, ERROR_STYLE);
+        startDaemonThread(currentTask, data.length);
+    }
 
-        currentTask = new Task<>() {
+    private Task<StatisticsCalculatorResult> buildComputeTask(double[] data) {
+        return new Task<>() {
             @Override
             protected StatisticsCalculatorResult call() {
-                StatisticsCalculatorForm form = new StatisticsCalculatorForm(data);
-                return service.calculate(form);
+                return service.calculate(new StatisticsCalculatorForm(data));
             }
         };
+    }
 
-        final String inputSnapshot = rawInput;
-        currentTask.setOnSucceeded(workerState -> {
-            StatisticsCalculatorResult result = currentTask.getValue();
-            // Platform.runLater() — mandatory for any UI mutation from a non-FX thread.
-            // resultArea is a UI node and must be updated on the FX Application Thread.
-            Platform.runLater(() -> {
-                if (result.isError()) {
-                    resultArea.setStyle(ERROR_STYLE);
-                    resultArea.setText("Error: " + result.errorMessage());
-                } else {
-                    String formatted = String.format(
-                        "Count: %d%nSum: %.4f%nMean: %.4f%nMedian: %.4f%nStd Dev: %.4f%nMin: %.4f%nMax: %.4f",
-                        result.count(), result.sum(), result.mean(),
-                        result.median(), result.stdDev(), result.min(), result.max());
-                    resultArea.setStyle(NORMAL_STYLE);
-                    resultArea.setText(formatted);
-                    // Truncate long input arrays to keep history readable
-                    String truncated = inputSnapshot.length() > 40
-                            ? inputSnapshot.substring(0, 37) + "..."
-                            : inputSnapshot;
-                    HistoryService.getInstance().addEntry("Statistics", truncated, formatted);
-                }
-            });
-        });
-
-        currentTask.setOnFailed(workerState -> {
-            Throwable ex = currentTask.getException();
-            log.error("Statistics Task failed", ex);
-            Platform.runLater(() -> {
-                resultArea.setStyle(ERROR_STYLE);
-                resultArea.setText("Error: Computation failed — " + ex.getMessage());
-                showErrorDialog("Computation Error",
-                        "Statistics calculation failed.\n" + ex.getMessage());
-            });
-        });
-
-        Thread taskThread = new Thread(currentTask, "statistics-calc-thread");
-        taskThread.setDaemon(true);
-        taskThread.start();
-        log.debug("Statistics task started for {} data points", data.length);
+    private void startDaemonThread(Task<?> task, int dataPoints) {
+        Thread thread = new Thread(task, "statistics-calc-thread");
+        thread.setDaemon(true);
+        thread.start();
+        log.debug("Statistics task started for {} data points", dataPoints);
     }
 
     private void showErrorDialog(String title, String message) {

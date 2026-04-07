@@ -8,10 +8,12 @@ module com.techdeveloper.calculator {
 
     opens com.techdeveloper.calculator to javafx.fxml;
     opens com.techdeveloper.calculator.controller to javafx.fxml;
+    opens com.techdeveloper.calculator.controller.helper to javafx.fxml;
     opens com.techdeveloper.calculator.service to javafx.fxml;
 
     exports com.techdeveloper.calculator;
     exports com.techdeveloper.calculator.controller;
+    exports com.techdeveloper.calculator.controller.helper;
     exports com.techdeveloper.calculator.service;
     exports com.techdeveloper.calculator.service.impl;
     exports com.techdeveloper.calculator.constants;

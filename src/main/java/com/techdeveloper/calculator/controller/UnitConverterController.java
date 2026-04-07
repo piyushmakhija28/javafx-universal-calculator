@@ -1,6 +1,7 @@
 package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.constants.UnitCategory;
+import com.techdeveloper.calculator.controller.helper.UnitConverterHelper;
 import com.techdeveloper.calculator.dto.UnitConverterResult;
 import com.techdeveloper.calculator.form.UnitConverterForm;
 import com.techdeveloper.calculator.service.CalculatorService;
@@ -28,7 +29,7 @@ import java.util.ResourceBundle;
  * Populates category and unit ComboBoxes in initialize()/onCategoryChange().
  * Delegates to UnitConverterService using UnitConverterForm.
  */
-public class UnitConverterController implements Initializable {
+public class UnitConverterController extends UnitConverterHelper implements Initializable {
 
     public UnitConverterController() {
         // required for FXML
@@ -75,44 +76,48 @@ public class UnitConverterController implements Initializable {
 
     @FXML
     private void onConvert(ActionEvent event) {
-        String category = comboCategory.getValue();
-        String fromUnit = comboFrom.getValue();
-        String toUnit   = comboTo.getValue();
+        String category  = comboCategory.getValue();
+        String fromUnit  = comboFrom.getValue();
+        String toUnit    = comboTo.getValue();
         String valueText = fieldValue.getText().trim();
-
-        if (valueText.isEmpty()) {
-            showErrorDialog("Missing Input", "Please enter a value to convert.");
-            return;
-        }
-        if (fromUnit == null || toUnit == null) {
-            showErrorDialog("Missing Input", "Please select both From and To units.");
-            return;
-        }
-
+        if (!validateConversionInputs(valueText, fromUnit, toUnit)) return;
         try {
             double value = Double.parseDouble(valueText);
-            // Map display category string to UnitCategory enum
             UnitCategory unitCategory = UnitCategory.valueOf(category.toUpperCase());
-
-            UnitConverterForm form = new UnitConverterForm(value, fromUnit, toUnit, unitCategory);
-            UnitConverterResult result = service.calculate(form);
-            log.debug("Unit conversion isError={}", result.isError());
-
-            if (result.isError()) {
-                displayResult("Error: " + result.errorMessage());
-            } else {
-                String formatted = String.format("%.6g %s = %.6g %s",
-                    value, result.fromUnit(), result.result(), result.toUnit());
-                displayResult(formatted);
-                String inputSummary = valueText + " " + fromUnit + " -> " + toUnit + " (" + category + ")";
-                HistoryService.getInstance().addEntry("Unit", inputSummary, formatted);
-            }
+            executeConversion(value, unitCategory, fromUnit, toUnit, valueText, category);
         } catch (NumberFormatException e) {
             log.warn("UnitConverter controller: invalid value input", e);
             displayResult("Error: Invalid numeric value");
         } catch (IllegalArgumentException e) {
             log.warn("UnitConverter controller: unknown category={}", category, e);
             displayResult("Error: Unknown category");
+        }
+    }
+
+    private boolean validateConversionInputs(String valueText, String fromUnit, String toUnit) {
+        if (valueText.isEmpty()) {
+            showErrorDialog("Missing Input", "Please enter a value to convert.");
+            return false;
+        }
+        if (fromUnit == null || toUnit == null) {
+            showErrorDialog("Missing Input", "Please select both From and To units.");
+            return false;
+        }
+        return true;
+    }
+
+    private void executeConversion(double value, UnitCategory cat, String from, String to,
+            String valueText, String category) {
+        UnitConverterForm form = new UnitConverterForm(value, from, to, cat);
+        UnitConverterResult result = service.calculate(form);
+        log.debug("Unit conversion isError={}", result.isError());
+        if (result.isError()) {
+            displayResult("Error: " + result.errorMessage());
+        } else {
+            String formatted = formatConversionResult(value, result);
+            displayResult(formatted);
+            String inputSummary = valueText + " " + from + " -> " + to + " (" + category + ")";
+            HistoryService.getInstance().addEntry("Unit", inputSummary, formatted);
         }
     }
 

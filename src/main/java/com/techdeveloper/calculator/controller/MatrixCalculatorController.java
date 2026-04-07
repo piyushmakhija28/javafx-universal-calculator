@@ -1,6 +1,7 @@
 package com.techdeveloper.calculator.controller;
 
 import com.techdeveloper.calculator.constants.MatrixOperation;
+import com.techdeveloper.calculator.controller.helper.MatrixCalculatorHelper;
 import com.techdeveloper.calculator.dto.MatrixCalculatorResult;
 import com.techdeveloper.calculator.form.MatrixCalculatorForm;
 import com.techdeveloper.calculator.service.CalculatorService;
@@ -30,7 +31,7 @@ import java.util.ResourceBundle;
  * Service form: MatrixCalculatorForm(operation, matrixA, matrixB, size).
  * Button display text is mapped to MatrixOperation enum values.
  */
-public class MatrixCalculatorController implements Initializable {
+public class MatrixCalculatorController extends MatrixCalculatorHelper implements Initializable {
 
     public MatrixCalculatorController() {
         // required for FXML
@@ -80,55 +81,52 @@ public class MatrixCalculatorController implements Initializable {
 
     @FXML
     private void onOperation(ActionEvent event) {
-        String buttonText = ((Button) event.getSource()).getText();
-        MatrixOperation operation = mapButtonToOperation(buttonText);
-
-        // Build typed double[][] matrices from TextFields
+        MatrixOperation operation = mapButtonToOperation(((Button) event.getSource()).getText());
         double[][] matrixA = buildMatrix("A");
         double[][] matrixB = buildMatrix("B");
+        cancelCurrentTask();
+        setComputingState();
+        launchMatrixTask(operation, matrixA, matrixB);
+    }
 
-        // Cancel any in-flight task
-        if (currentTask != null && currentTask.isRunning()) {
-            currentTask.cancel();
-        }
+    // ── Private helpers ────────────────────────────────────────────────────
 
+    private void cancelCurrentTask() {
+        if (currentTask != null && currentTask.isRunning()) currentTask.cancel();
+    }
+
+    private void setComputingState() {
         resultArea.setStyle(NORMAL_STYLE);
         resultArea.setText("Computing...");
+    }
 
+    private void launchMatrixTask(MatrixOperation operation, double[][] matA, double[][] matB) {
         final int taskSize = matrixSize;
         currentTask = new Task<>() {
             @Override
             protected MatrixCalculatorResult call() {
-                MatrixCalculatorForm form = new MatrixCalculatorForm(operation, matrixA, matrixB, taskSize);
+                MatrixCalculatorForm form = new MatrixCalculatorForm(operation, matA, matB, taskSize);
                 return service.calculate(form);
             }
         };
-
-        final MatrixOperation historyOperation = operation;
-        currentTask.setOnSucceeded(workerState -> {
-            MatrixCalculatorResult result = currentTask.getValue();
-            // Platform.runLater() — mandatory for any UI mutation from a non-FX thread.
-            // displayResult() updates TextArea nodes which must run on the FX Application Thread.
-            Platform.runLater(() -> {
-                displayResult(result, historyOperation, taskSize);
-            });
-        });
-
-        currentTask.setOnFailed(workerState -> {
-            Throwable ex = currentTask.getException();
-            log.error("Matrix Task failed for operation={}", operation, ex);
-            Platform.runLater(() -> {
-                resultArea.setStyle(ERROR_STYLE);
-                resultArea.setText("Error: Computation failed — " + ex.getMessage());
-                showErrorDialog("Computation Error",
-                        "Matrix " + operation + " failed.\n" + ex.getMessage());
-            });
-        });
-
-        Thread taskThread = new Thread(currentTask, "matrix-calc-thread");
-        taskThread.setDaemon(true); // Daemon: JVM exit will not block on this thread
-        taskThread.start();
+        final MatrixOperation historyOp = operation;
+        currentTask.setOnSucceeded(ws ->
+            Platform.runLater(() -> displayResult(currentTask.getValue(), historyOp, taskSize)));
+        currentTask.setOnFailed(ws -> onTaskFailed(currentTask.getException(), operation));
+        Thread t = new Thread(currentTask, "matrix-calc-thread");
+        t.setDaemon(true);
+        t.start();
         log.debug("Matrix task started for operation={}", operation);
+    }
+
+    private void onTaskFailed(Throwable ex, MatrixOperation operation) {
+        log.error("Matrix Task failed for operation={}", operation, ex);
+        Platform.runLater(() -> {
+            resultArea.setStyle(ERROR_STYLE);
+            resultArea.setText("Error: Computation failed — " + ex.getMessage());
+            showErrorDialog("Computation Error",
+                    "Matrix " + operation + " failed.\n" + ex.getMessage());
+        });
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -155,18 +153,6 @@ public class MatrixCalculatorController implements Initializable {
         }
     }
 
-    private String formatMatrix(double[][] matrix) {
-        StringBuilder sb = new StringBuilder();
-        for (double[] row : matrix) {
-            for (int j = 0; j < row.length; j++) {
-                if (j > 0) sb.append("  ");
-                sb.append(String.format("%10.4f", row[j]));
-            }
-            sb.append("\n");
-        }
-        return sb.toString().trim();
-    }
-
     /**
      * Build a double[][] matrix from the TextFields for the given prefix ("A" or "B").
      */
@@ -190,31 +176,6 @@ public class MatrixCalculatorController implements Initializable {
             }
         }
         return m;
-    }
-
-    /**
-     * Map FXML button display text to the MatrixOperation enum value.
-     */
-    private MatrixOperation mapButtonToOperation(String buttonText) {
-        return switch (buttonText.trim().toUpperCase()) {
-            case "ADD"         -> MatrixOperation.ADD;
-            case "SUBTRACT"    -> MatrixOperation.SUBTRACT;
-            case "MULTIPLY"    -> MatrixOperation.MULTIPLY;
-            case "TRANSPOSE A" -> MatrixOperation.TRANSPOSE;
-            case "DET A"       -> MatrixOperation.DETERMINANT;
-            default            -> MatrixOperation.valueOf(buttonText.trim().toUpperCase());
-        };
-    }
-
-    private double safeDouble(TextField tf) {
-        if (tf == null) return 0.0;
-        String txt = tf.getText().trim();
-        if (txt.isEmpty()) return 0.0;
-        try {
-            return Double.parseDouble(txt);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
     }
 
     private void setThirdRowVisible(boolean visible) {
